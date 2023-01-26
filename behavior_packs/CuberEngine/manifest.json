@@ -1,0 +1,38 @@
+{
+  "format_version": 2,
+  "header": {
+    "name": "CuberEngine",
+    "description": "My TypeScript Project",
+    "uuid": "de4870e2-a392-4d7b-b6cf-a11da922670f",
+    "version": [0, 1, 0],
+    "min_engine_version": [1, 19, 50]
+  },
+  "modules": [
+    {
+      "description": "Script resources",
+      "language": "javascript",
+      "type": "script",
+      "uuid": "9543d10c-07cf-4ecc-88b2-2d4c0c0790d3",
+      "version": [0, 1, 0],
+      "entry": "scripts/main.js"
+    }
+  ],
+  "dependencies": [
+    {
+      "module_name": "@minecraft/server",
+      "version": "1.1.0-beta"
+    },
+    {
+      "module_name": "@minecraft/server-ui",
+      "version": "1.0.0-beta"
+    },
+    {
+      "module_name": "@minecraft/server-net",
+      "version": "1.0.0-beta"
+    },
+    {
+      "uuid": "ec5cbf7d-c35d-4ec4-b0f1-437a42b4414c",
+      "version": [0, 1, 5]
+    }
+  ]
+}

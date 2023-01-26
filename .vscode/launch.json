@@ -1,0 +1,23 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "args": [],
+      "name": "Gulp Deploy",
+      "program": "${workspaceFolder}/node_modules/gulp/bin/gulp.js",
+      "request": "launch",
+      "skipFiles": ["<node_internals>/**"],
+      "type": "node"
+    },
+    {
+      "type": "minecraft-js",
+      "request": "attach",
+      "name": "Debug with Minecraft",
+      "mode": "listen",
+      "localRoot": "${workspaceFolder}/scripts/",
+      "sourceMapRoot": "${workspaceFolder}/build/behavior_packs/_cottaDebug/",
+      "generatedSourceRoot": "${workspaceFolder}/build/behavior_packs/cotta/",
+      "port": 19144
+    }
+  ]
+}
