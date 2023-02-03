@@ -16,7 +16,7 @@ async function clearEntity(config) {
     config.forecasted = false;
     config.last_clear = new Date().getTime();
     if (config.display) {
-        tellMessage(data.settings.entity_clear.sender, "即将清理§e§l" + config.show ?? config.name + "§r...");
+        tellMessage(data.settings.entity_clear.sender, "即将清理§e§l" + (config.show ?? config.name) + "§r喵~...");
     }
     // Run Clear Task
     let total_clear = 0;
@@ -36,7 +36,7 @@ async function clearEntity(config) {
             }
         }
     }
-    tellMessage(data.settings.entity_clear.sender, "" + (config.show ?? config.name) + "§a§l清理完成！§r本次共清理§e§l" + total_clear + "§r个实体");
+    tellMessage(data.settings.entity_clear.sender, "" + (config.show ?? config.name) + "§a§l清理完成！§r本次共清理§e§l" + total_clear + "§r个实体喵~");
     data.settings.entity_clear.total_clear += total_clear;
     saveData();
 }
@@ -186,7 +186,7 @@ function initServerManage() {
                 if (config.forecast &&
                     !config.forecasted &&
                     nowTime - config.last_clear >= (config.time - config.foretime) * 1000) {
-                    tellMessage(data.settings.entity_clear.sender, "还有§c" + config.foretime + "秒§r就要清理§e§l" + config.show ?? config.name + "§r了！");
+                    tellMessage(data.settings.entity_clear.sender, "还有§c" + config.foretime + "秒§r就要清理§e§l" + config.show ?? config.name + "§r了喵！");
                     config.forecasted = true;
                 }
                 if (nowTime - config.last_clear >= config.time * 1000) {

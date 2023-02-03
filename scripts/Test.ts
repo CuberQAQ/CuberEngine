@@ -116,14 +116,6 @@ function initTest() {
             for (let i = 0; i < 100; ++i) {
               await overworld.runCommandAsync('scoreboard players add "测试" test 1');
             }
-          } else if (/^#cuber tickTest2/.test(e.message)) {
-            let countDown = 100;
-            let timer = setInterval(() => {
-              overworld.runCommandAsync('scoreboard players add "测试" test 1');
-              if (--countDown <= 0) {
-                clearInterval(timer);
-              }
-            }, 1);
           } else if (/^#cuber sweep/.test(e.message)) {
             tellMessage("§b§l扫地姬", "§e@" + e.sender.name + "§r 喊我扫地啦！");
             data.settings.entity_clear.config.forEach((config: any) => {

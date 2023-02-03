@@ -63,6 +63,24 @@ function initSmallGame() {
           // tellMessage("§c密室杀手", "§e§l" + e.hurtEntity.nameTag + "§r 死了!");
         }
       }
+    } else if (e.hurtEntity.hasTag("msss2")) {
+      {
+        if ((e.hurtEntity.getComponent("minecraft:health") as EntityHealthComponent)?.current <= 0) {
+          tellMessage("§c密室杀手", "§e§l" + e.hurtEntity.nameTag + "§r 死了!");
+        } else if (
+          e.damagingEntity.hasTag("msss2_zt") &&
+          e.projectile.typeId == "minecraft:arrow" &&
+          e.hurtEntity.hasTag("msss2_ss")
+        ) {
+          e.hurtEntity.runCommandAsync("kill");
+        } else if (
+          e.damagingEntity.hasTag("msss2_ss") &&
+          e.projectile.typeId == "minecraft:thrown_trident" &&
+          e.hurtEntity.hasTag("msss2_zt")
+        ) {
+          e.hurtEntity.runCommandAsync("kill");
+        }
+      }
     }
   });
   return { moduleName, moduleVersion };

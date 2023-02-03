@@ -43,7 +43,7 @@ async function clearEntity(config: EntityClearConfigType) {
   config.forecasted = false;
   config.last_clear = new Date().getTime();
   if (config.display) {
-    tellMessage(data.settings.entity_clear.sender, "即将清理§e§l" + config.show ?? config.name + "§r...");
+    tellMessage(data.settings.entity_clear.sender, "即将清理§e§l" + (config.show ?? config.name) + "§r喵~...");
   }
   // Run Clear Task
   let total_clear = 0;
@@ -64,7 +64,7 @@ async function clearEntity(config: EntityClearConfigType) {
   }
   tellMessage(
     data.settings.entity_clear.sender,
-    "" + (config.show ?? config.name) + "§a§l清理完成！§r本次共清理§e§l" + total_clear + "§r个实体"
+    "" + (config.show ?? config.name) + "§a§l清理完成！§r本次共清理§e§l" + total_clear + "§r个实体喵~"
   );
   data.settings.entity_clear.total_clear += total_clear;
   saveData();
@@ -231,7 +231,7 @@ function initServerManage() {
         ) {
           tellMessage(
             data.settings.entity_clear.sender,
-            "还有§c" + config.foretime + "秒§r就要清理§e§l" + config.show ?? config.name + "§r了！"
+            "还有§c" + config.foretime + "秒§r就要清理§e§l" + config.show ?? config.name + "§r了喵！"
           );
           config.forecasted = true;
         }

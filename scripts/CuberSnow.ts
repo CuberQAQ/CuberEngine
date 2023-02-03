@@ -2213,6 +2213,14 @@ const snowScripts: SnowScriptList = {
       } // switch
     } // while
   },
+  backup_settings: async function (player, list_key) {
+    while (true) {
+      let mdr = await new ModalFormData()
+        .title("备份设置")
+        .toggle("自动备份", backupInfo.auto_backup)
+        .slider("自动备份", 1, 72, 1, backupInfo);
+    }
+  },
 };
 const strScripts: StrScriptList = {
   test: async function (player, list_key) {
@@ -2267,9 +2275,9 @@ const strScripts: StrScriptList = {
   },
   getSweeperBody: async function (player, list_key) {
     return (
-      "§a§l欢迎使用扫地姬！§r\n我们的职责是§e§l清理服务器的多余实体！§r\n扫地姬§b§l累计清理实体数§r: §l" +
+      "§a§l欢迎使用扫地姬！§r\n我们的职责是§e§l清理服务器的多余喵~！§r\n扫地姬§b§l累计清理实体数§r: §l§r喵~" +
       data.settings.entity_clear.total_clear +
-      "§r\n请选择一个选项："
+      "§r\n请选择一个选项喵~："
     );
   },
   getBackupBody: async function (player, list_key) {
