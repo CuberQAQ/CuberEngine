@@ -4,7 +4,7 @@ const bpfoldername = "CuberEngine";
 const useMinecraftPreview = false; // Whether to target the "Minecraft Preview" version of Minecraft vs. the main store version of Minecraft
 const useMinecraftDedicatedServer = true; // Whether to use Bedrock Dedicated Server - see https://www.minecraft.net/download/server/bedrock
 const dedicatedServerPath = "D:/Something/Minecraft/BDS/"; // if using Bedrock Dedicated Server, where to find the extracted contents of the zip package
-const onlyDeployBehaviorPack = true;
+const onlyDeployBehaviorPack = false;
 
 // === END CONFIGURABLE VARIABLES
 
