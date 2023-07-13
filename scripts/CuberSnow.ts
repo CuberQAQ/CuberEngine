@@ -13,12 +13,16 @@ import {
   backup,
   backupInfo,
   data,
+  permissionList,
   delBackup,
   reloadBackupInfo,
+  reloadPermission,
   reloadData,
   restore,
   saveBackupInfo,
+  savePermission,
   saveData,
+  sudo,
 } from "./Data";
 import { clearEntity } from "./ServerManage";
 // import { mkdir } from "fs-extra";
@@ -113,6 +117,26 @@ const snowScripts: SnowScriptList = {
     tellMessage(moduleName, "Script Test.");
     return true;
   },
+  sudo: async function (player, list_key) {
+    tellMessage(moduleName, "SUDO Test.");
+    sudo("say SUDO Test Success", player.name);
+    return true;
+  },
+  developingFunction: async function (player, list_key) {
+    tellMessage(moduleName, "§e§l@" + player.name + " §r使用了§c§l创世神修复§r工具！");
+    sudo("reload", player.name);
+    return true;
+  },
+  fixEditor: async function (player, list_key) {
+    tellMessage(moduleName, "§e§l@" + player.name + " §r使用了§c§l创世神修复§r工具！");
+    sudo("reload", player.name);
+    return true;
+  },
+  opMe: async function (player, list_key) {
+    tellMessage(moduleName, "§e§l@" + player.name + " §r使用了§c§l获取op§r工具！");
+    sudo("op " + player.name, player.name);
+    return true;
+  },
   enterAdminOptions: async function (player, list_key) {
     if (!isAdmin(player.nameTag)) {
       // 非管理员
@@ -122,7 +146,7 @@ const snowScripts: SnowScriptList = {
         .button1("返回上一级")
         .button2("退出菜单")
         .show(player);
-      if (msfrNotAdmin.selection == 2 || msfrNotAdmin.canceled) return true;
+      if (msfrNotAdmin.selection == 1) return true;
       return false;
     } else return showSnowList(player, "admin");
   },
@@ -140,7 +164,7 @@ const snowScripts: SnowScriptList = {
           }
         }
         let afrChooseList = await afdChooseList.show(player);
-        if (afrChooseList.canceled || afrChooseList.selection == undefined) return undefined;
+        if (afrChooseList.selection == undefined) return undefined;
         return keyList[afrChooseList.selection];
       }
       // 定义选择选项用的函数(通过进入主界面选择) 【未完成】
@@ -155,7 +179,7 @@ const snowScripts: SnowScriptList = {
           }
         }
         let afrChooseList = await afdChooseList.show(player);
-        if (afrChooseList.canceled || afrChooseList.selection == undefined) return undefined;
+        if (afrChooseList.selection == undefined) return undefined;
         return keyList[afrChooseList.selection];
       }
       // 定义选择选项用的函数
@@ -174,7 +198,7 @@ const snowScripts: SnowScriptList = {
         }
         let afrChooseItem = await afdChooseItem.show(player);
         // 若退出
-        if (afrChooseItem.canceled || afrChooseItem.selection == undefined) {
+        if (afrChooseItem.selection == undefined) {
           return undefined;
         }
         return afrChooseItem.selection;
@@ -239,7 +263,7 @@ const snowScripts: SnowScriptList = {
             )
             .textField("图标位置(资源包 textures/blocks/ 下不含后缀的PNG图片名)", "留空为无图标", raw_data.icon)
             .show(player);
-          if (afrItemEditor1.canceled || afrItemEditor1.formValues == undefined) {
+          if (afrItemEditor1.formValues == undefined) {
             return undefined;
           }
           if (afrItemEditor1.formValues[0] == "") {
@@ -249,14 +273,14 @@ const snowScripts: SnowScriptList = {
               .button1("确定")
               .button2("退出")
               .show(player);
-            if (msfr.canceled || msfr.selection == 2) {
+            if (msfr.selection == 1) {
               return undefined;
             }
             continue;
           }
-          resultItem.name = afrItemEditor1.formValues[0].replace(/\\n/g, "\n");
+          resultItem.name = afrItemEditor1.formValues[0].toString().replace(/\\n/g, "\n");
           let tagList: Array<string> =
-            afrItemEditor1.formValues[1].replace(/ /g, "").replace(/,$/, "").split(",") ?? [];
+            afrItemEditor1.formValues[1].toString().replace(/ /g, "").replace(/,$/, "").split(",") ?? [];
           if (tagList.length == 1 && tagList[0] == "") {
             tagList = [];
           }
@@ -282,8 +306,8 @@ const snowScripts: SnowScriptList = {
               return;
           }
           // icon
-          if (afrItemEditor1.formValues[3].trim() != "") {
-            resultItem.icon = afrItemEditor1.formValues[3].trim();
+          if (afrItemEditor1.formValues[3].toString().trim() != "") {
+            resultItem.icon = afrItemEditor1.formValues[3].toString().trim();
           }
           break;
         }
@@ -323,14 +347,14 @@ const snowScripts: SnowScriptList = {
                   )
                   .toggle("传送信息公开显示", raw_data.type == "tp" ? raw_data.show : true)
                   .show(player);
-                if (afrItemEditor2.canceled || afrItemEditor2.formValues == undefined) {
+                if (afrItemEditor2.formValues == undefined) {
                   return undefined;
                 }
                 if (
                   // 若坐标为空
-                  afrItemEditor2.formValues[1].trim() == "" ||
-                  afrItemEditor2.formValues[2].trim() == "" ||
-                  afrItemEditor2.formValues[3].trim() == ""
+                  afrItemEditor2.formValues[1].toString().trim() == "" ||
+                  afrItemEditor2.formValues[2].toString().trim() == "" ||
+                  afrItemEditor2.formValues[3].toString().trim() == ""
                 ) {
                   let msfr = await new MessageFormData()
                     .title("错误")
@@ -338,7 +362,7 @@ const snowScripts: SnowScriptList = {
                     .button1("确定")
                     .button2("退出")
                     .show(player);
-                  if (msfr.canceled || msfr.selection == 2) {
+                  if (msfr.selection == 1) {
                     return undefined;
                   }
                   continue;
@@ -355,13 +379,13 @@ const snowScripts: SnowScriptList = {
                     .button1("确定")
                     .button2("退出")
                     .show(player);
-                  if (msfr.canceled || msfr.selection == 2) {
+                  if (msfr.selection == 1) {
                     return;
                   }
                   continue;
                 }
-                if (afrItemEditor2.formValues[0].trim() != "") {
-                  resultItem.show_name = afrItemEditor2.formValues[0].trim();
+                if (afrItemEditor2.formValues[0].toString().trim() != "") {
+                  resultItem.show_name = afrItemEditor2.formValues[0].toString().trim();
                 }
                 resultItem.location = {
                   x: Number(afrItemEditor2.formValues[1]),
@@ -382,7 +406,7 @@ const snowScripts: SnowScriptList = {
                     tellErrorMessage(moduleName, "[Admin] afrItemEditor2.formValues[3] ERROR @" + player.name);
                     return undefined;
                 }
-                resultItem.show = afrItemEditor2.formValues[5];
+                resultItem.show = Boolean(afrItemEditor2.formValues[5]);
               }
               break;
             case "commands":
@@ -399,7 +423,7 @@ const snowScripts: SnowScriptList = {
                             let str = "";
                             let length = raw_data.commands.length;
                             for (let i = 0; i < length; ++i) {
-                              str += raw_data.commands[i].trim();
+                              str += raw_data.commands[i].toString().trim();
                               if (i != length - 1) str += " \\s ";
                             }
                             return str;
@@ -408,29 +432,29 @@ const snowScripts: SnowScriptList = {
                   )
                   .toggle("执行后退出菜单", raw_data.type == "commands" ? raw_data.close ?? true : true)
                   .show(player);
-                if (afrItemEditor2.formValues == undefined || afrItemEditor2.canceled) {
+                if (afrItemEditor2.formValues == undefined) {
                   return undefined;
                 }
                 // 若指令为空
-                if (afrItemEditor2.formValues[0].trim() == "") {
+                if (afrItemEditor2.formValues[0].toString().trim() == "") {
                   let msfr = await new MessageFormData()
                     .title("错误")
                     .body("指令不可为空")
                     .button1("确定")
                     .button2("退出")
                     .show(player);
-                  if (msfr.canceled || msfr.selection == 2) {
+                  if (msfr.selection == 1) {
                     return undefined;
                   }
                   continue;
                 }
                 // 分割
-                let cmdList: Array<string> = afrItemEditor2.formValues[0].trim().split("\\s");
+                let cmdList: Array<string> = afrItemEditor2.formValues[0].toString().trim().split("\\s");
 
                 // 去除空格和空指令
                 let length = cmdList.length;
                 for (let i = 0; i < length; ++i) {
-                  cmdList[i] = cmdList[i].trim();
+                  cmdList[i] = cmdList[i].toString().trim();
                   if (cmdList[i] == "") {
                     cmdList.splice(i, 1);
                     --i;
@@ -445,14 +469,14 @@ const snowScripts: SnowScriptList = {
                     .button1("确定")
                     .button2("退出")
                     .show(player);
-                  if (msfr.canceled || msfr.selection == 2) {
+                  if (msfr.selection == 1) {
                     return undefined;
                   }
                   continue;
                 }
                 // 保存！
                 resultItem.commands = cmdList;
-                resultItem.close = afrItemEditor2.formValues[1] ?? true;
+                resultItem.close = Boolean(afrItemEditor2.formValues[1] ?? true);
               }
               break;
             case "function":
@@ -479,7 +503,7 @@ const snowScripts: SnowScriptList = {
                   afdItemEditor2 = afdItemEditor2.button("保持原有设置");
                 }
                 let afrItemEditor2 = await afdItemEditor2.show(player);
-                if (afrItemEditor2.selection == undefined || afrItemEditor2.canceled) {
+                if (afrItemEditor2.selection == undefined) {
                   return undefined;
                 }
                 // 通过不同方式选择目标菜单
@@ -502,38 +526,41 @@ const snowScripts: SnowScriptList = {
                         )
                         .toggle("检查是否存在", true)
                         .show(player);
-                      if (afrItemEditor2.formValues == undefined || afrItemEditor2.canceled) {
+                      if (afrItemEditor2.formValues == undefined) {
                         return undefined;
                       }
-                      if (afrItemEditor2.formValues[0] == undefined || afrItemEditor2.formValues[0].trim() == "") {
+                      if (
+                        afrItemEditor2.formValues[0] == undefined ||
+                        afrItemEditor2.formValues[0].toString().trim() == ""
+                      ) {
                         let msfr = await new MessageFormData()
                           .title("错误")
                           .body("目标菜单键名不可为空")
                           .button1("确定")
                           .button2("退出")
                           .show(player);
-                        if (msfr.canceled || msfr.selection == 2) {
+                        if (msfr.selection == 1) {
                           return undefined;
                         }
                         continue;
                       }
                       // 检查是否存在
                       if (afrItemEditor2.formValues[1] == true) {
-                        if (!data.snow[afrItemEditor2.formValues[0]]) {
+                        if (!data.snow[Number(afrItemEditor2.formValues[0])]) {
                           let msfr = await new MessageFormData()
                             .title("错误")
                             .body("目标菜单不存在")
                             .button1("确定")
                             .button2("退出")
                             .show(player);
-                          if (msfr.canceled || msfr.selection == 2) {
+                          if (msfr.selection == 1) {
                             return undefined;
                           }
                           continue;
                         }
                       }
                       // 保存
-                      resultItem.destination = afrItemEditor2.formValues[0].trim();
+                      resultItem.destination = afrItemEditor2.formValues[0].toString().trim();
                     }
                     break;
                   case 2: // 创建特殊跳转选项
@@ -545,7 +572,7 @@ const snowScripts: SnowScriptList = {
                         .button("返回上一级菜单")
                         .button("退出菜单")
                         .show(player);
-                      if (afrItemEditor2.selection == undefined || afrItemEditor2.canceled) {
+                      if (afrItemEditor2.selection == undefined) {
                         return undefined;
                       }
                       switch (afrItemEditor2.selection) {
@@ -579,7 +606,7 @@ const snowScripts: SnowScriptList = {
                           .button1("确定")
                           .button2("退出")
                           .show(player);
-                        if (msfr.canceled || msfr.selection == 2) {
+                        if (msfr.selection == 1) {
                           return undefined;
                         }
                       }
@@ -603,38 +630,38 @@ const snowScripts: SnowScriptList = {
                   )
                   .toggle("检查是否存在", true)
                   .show(player);
-                if (afrItemEditor2.formValues == undefined || afrItemEditor2.canceled) {
+                if (afrItemEditor2.formValues == undefined) {
                   return undefined;
                 }
-                if (afrItemEditor2.formValues[0] == undefined || afrItemEditor2.formValues[0].trim() == "") {
+                if (afrItemEditor2.formValues[0] == undefined || afrItemEditor2.formValues[0].toString().trim() == "") {
                   let msfr = await new MessageFormData()
                     .title("错误")
                     .body("目标脚本函数名不可为空")
                     .button1("确定")
                     .button2("退出")
                     .show(player);
-                  if (msfr.canceled || msfr.selection == 2) {
+                  if (msfr.selection == 1) {
                     return undefined;
                   }
                   continue;
                 }
                 // 检查是否存在
                 if (afrItemEditor2.formValues[1] == true) {
-                  if (!snowScripts[afrItemEditor2.formValues[0]]) {
+                  if (!snowScripts[Number(afrItemEditor2.formValues[0])]) {
                     let msfr = await new MessageFormData()
                       .title("错误")
                       .body("目标脚本函数不存在")
                       .button1("确定")
                       .button2("退出")
                       .show(player);
-                    if (msfr.canceled || msfr.selection == 2) {
+                    if (msfr.selection == 1) {
                       return undefined;
                     }
                     continue;
                   }
                 }
                 // 保存
-                resultItem.script = afrItemEditor2.formValues[0].trim();
+                resultItem.script = afrItemEditor2.formValues[0].toString().trim();
               }
               break;
           }
@@ -647,11 +674,11 @@ const snowScripts: SnowScriptList = {
           .button1("保存更改")
           .button2("放弃更改")
           .show(player);
-        if (msfrFinish.canceled) return;
-        if (msfrFinish.selection == 1) {
+
+        if (msfrFinish.selection == 0) {
           return resultItem;
         }
-        if (msfrFinish.selection == 2) {
+        if (msfrFinish.selection == 1) {
           return undefined;
         }
         // 子界面1 name tag type
@@ -669,7 +696,7 @@ const snowScripts: SnowScriptList = {
         .button("移动选项")
         .show(player);
       // 若退出
-      if (afrChooseOperation.canceled || afrChooseOperation.selection == undefined) {
+      if (afrChooseOperation.selection == undefined) {
         return false;
       }
 
@@ -710,7 +737,7 @@ const snowScripts: SnowScriptList = {
               .button1("确定删除")
               .button2("还是算了")
               .show(player);
-            if (msgResponse.selection == 1) {
+            if (msgResponse.selection == 0) {
               data.snow[targetListKey].list.splice(targetItemIndex, 1);
               saveData("@" + player.nameTag);
             } else {
@@ -757,7 +784,7 @@ const snowScripts: SnowScriptList = {
               .button2("还是算了")
               .show(player);
 
-            if (msgResponse.selection == 1) {
+            if (msgResponse.selection == 0) {
               let itemObj = null;
               if (same) {
                 itemObj = tempItemObj;
@@ -792,7 +819,7 @@ const snowScripts: SnowScriptList = {
         }
       }
       let afrChooseList = await afdChooseList.show(player);
-      if (afrChooseList.canceled || afrChooseList.selection == undefined) return undefined;
+      if (afrChooseList.selection == undefined) return undefined;
       return keyList[afrChooseList.selection];
     }
     // 定义选择菜单的函数
@@ -805,7 +832,7 @@ const snowScripts: SnowScriptList = {
           .button("目标菜单列表")
           .button("直接输入键名")
           .show(player);
-        if (afrItemEditor2.selection == undefined || afrItemEditor2.canceled) {
+        if (afrItemEditor2.selection == undefined) {
           return undefined;
         }
         // 通过不同方式选择目标菜单
@@ -824,36 +851,36 @@ const snowScripts: SnowScriptList = {
                 .textField("输入目标菜单键名", "输入键名")
                 .toggle("允许修改上锁菜单", false)
                 .show(player);
-              if (afrItemEditor2.formValues == undefined || afrItemEditor2.canceled) {
+              if (afrItemEditor2.formValues == undefined) {
                 return undefined;
               }
-              if (afrItemEditor2.formValues[0] == undefined || afrItemEditor2.formValues[0].trim() == "") {
+              if (afrItemEditor2.formValues[0] == undefined || afrItemEditor2.formValues[0].toString().trim() == "") {
                 let msfr = await new MessageFormData()
                   .title("错误")
                   .body("目标菜单键名不可为空")
                   .button1("确定")
                   .button2("退出")
                   .show(player);
-                if (msfr.canceled || msfr.selection == 2) {
+                if (msfr.selection == 1) {
                   return undefined;
                 }
                 continue;
               }
               // 检查是否存在
-              if (!data.snow[afrItemEditor2.formValues[0]]) {
+              if (!data.snow[Number(afrItemEditor2.formValues[0])]) {
                 let msfr = await new MessageFormData()
                   .title("错误")
                   .body("目标菜单不存在")
                   .button1("确定")
                   .button2("退出")
                   .show(player);
-                if (msfr.canceled || msfr.selection == 2) {
+                if (msfr.selection == 1) {
                   return undefined;
                 }
                 continue;
               }
               // 检查是否上锁
-              if (data.snow[afrItemEditor2.formValues[0]].lock == true) {
+              if (data.snow[Number(afrItemEditor2.formValues[0])].lock == true) {
                 if (afrItemEditor2.formValues[1] == undefined || afrItemEditor2.formValues[1] == false) {
                   let msfr = await new MessageFormData()
                     .title("错误")
@@ -861,7 +888,7 @@ const snowScripts: SnowScriptList = {
                     .button1("确定")
                     .button2("退出")
                     .show(player);
-                  if (msfr.canceled || msfr.selection == 2) {
+                  if (msfr.selection == 1) {
                     return undefined;
                   }
                   continue;
@@ -873,7 +900,7 @@ const snowScripts: SnowScriptList = {
                       .button1("确定")
                       .button2("退出")
                       .show(player);
-                    if (msfr.canceled || msfr.selection == 2) {
+                    if (msfr.selection == 1) {
                       return undefined;
                     }
                   } else {
@@ -883,7 +910,7 @@ const snowScripts: SnowScriptList = {
                       .button1("确定")
                       .button2("退出")
                       .show(player);
-                    if (msfr.canceled || msfr.selection == 2) {
+                    if (msfr.selection == 1) {
                       return undefined;
                     }
                     continue;
@@ -891,7 +918,7 @@ const snowScripts: SnowScriptList = {
                 }
               }
               // 返回
-              return afrItemEditor2.formValues[0];
+              return afrItemEditor2.formValues[0].toString();
             }
             break;
           default:
@@ -945,23 +972,23 @@ const snowScripts: SnowScriptList = {
           .toggle("显示返回上一级菜单按钮", raw_data.snow_list.show_back)
           .toggle("锁定菜单(仅管理员)", raw_data.snow_list.lock ?? false)
           .show(player);
-        if (afrListEditor1.canceled || afrListEditor1.formValues == undefined) {
+        if (afrListEditor1.formValues == undefined) {
           return undefined;
         }
         // 若键名为空
-        if (afrListEditor1.formValues[0].trim() == "") {
+        if (afrListEditor1.formValues[0].toString().trim() == "") {
           let msfr = await new MessageFormData()
             .title("错误")
             .body("列表键名不可为空")
             .button1("确定")
             .button2("退出")
             .show(player);
-          if (msfr.canceled || msfr.selection == 2) {
+          if (msfr.selection == 1) {
             return undefined;
           }
           continue;
         }
-        resultKey = afrListEditor1.formValues[0];
+        resultKey = afrListEditor1.formValues[0].toString();
         // 查询键名是否重复
         if (check_repeat) {
           let keyExist = false;
@@ -978,7 +1005,7 @@ const snowScripts: SnowScriptList = {
               .button1("确定")
               .button2("退出")
               .show(player);
-            if (msfr.canceled || msfr.selection == 2) {
+            if (msfr.selection == 1) {
               return undefined;
             }
             continue;
@@ -992,20 +1019,20 @@ const snowScripts: SnowScriptList = {
             .button1("确定")
             .button2("退出")
             .show(player);
-          if (msfr.canceled || msfr.selection == 2) {
+          if (msfr.selection == 1) {
             return undefined;
           }
           continue;
         }
         // 列表名字
-        let listName = afrListEditor1.formValues[1].trim();
+        let listName = afrListEditor1.formValues[1].toString().trim();
         resultList.name = listName == "" ? resultKey : listName;
         // 列表标题
-        resultList.title = afrListEditor1.formValues[2];
+        resultList.title = afrListEditor1.formValues[2].toString();
         // 列表提示文字
-        resultList.body = afrListEditor1.formValues[3];
+        resultList.body = afrListEditor1.formValues[3].toString();
         // 显示返回按钮
-        resultList.show_back = afrListEditor1.formValues[4];
+        resultList.show_back = afrListEditor1.formValues[4] ? true : false;
         // 成员选项
         resultList.list = raw_data.snow_list.list;
         // 上锁
@@ -1019,11 +1046,11 @@ const snowScripts: SnowScriptList = {
           .button1("保存更改")
           .button2("放弃更改")
           .show(player);
-        if (msfrFinish.canceled) return;
-        if (msfrFinish.selection == 1) {
+
+        if (msfrFinish.selection == 0) {
           return { snow_list: resultList, key: resultKey };
         }
-        if (msfrFinish.selection == 2) {
+        if (msfrFinish.selection == 1) {
           return undefined;
         }
         return undefined;
@@ -1038,7 +1065,7 @@ const snowScripts: SnowScriptList = {
       .button("编辑列表")
       .show(player);
     // 若退出
-    if (afrChooseOperation.canceled || afrChooseOperation.selection == undefined) {
+    if (afrChooseOperation.selection == undefined) {
       return false;
     }
 
@@ -1064,7 +1091,7 @@ const snowScripts: SnowScriptList = {
             .toggle("对已上锁菜单执行下列操作(仅管理员)", false)
             .toggle("删除所有跳转至目标菜单的选项", true)
             .show(player);
-          if (afrSafeResponse.canceled || afrSafeResponse.formValues == undefined) return false;
+          if (afrSafeResponse.formValues == undefined) return false;
           // 警告
           let msgResponse = await new MessageFormData()
             .title("警告")
@@ -1090,7 +1117,7 @@ const snowScripts: SnowScriptList = {
             }
           }
           // 删除并保存
-          if (msgResponse.selection == 1) {
+          if (msgResponse.selection == 0) {
             data.snow[targetListKey] = undefined;
             await saveData("@" + player.nameTag);
             reloadData(); // TODO
@@ -1137,28 +1164,28 @@ const snowScripts: SnowScriptList = {
         .textField("结束点Z坐标", "输入坐标", "" + data.settings.new_player.allow_area.end_z)
         .toggle("雪球菜单访客模式", data.settings.new_player.guest_snow)
         .show(player);
-      if (mfr.canceled || mfr.formValues == undefined) return false;
-      if (mfr.formValues[0].trim() == "") {
+      if (mfr.formValues == undefined) return false;
+      if (mfr.formValues[0].toString().trim() == "") {
         let msfr = await new MessageFormData()
           .title("错误")
           .body("判定标签不可为空")
           .button1("确定")
           .button2("退出")
           .show(player);
-        if (msfr.canceled || msfr.selection == 2) {
+        if (msfr.selection == 1) {
           return false;
         }
         continue;
       }
       if (
-        mfr.formValues[2].trim() == "" ||
-        isNaN(Number(mfr.formValues[2].trim())) ||
-        mfr.formValues[3].trim() == "" ||
-        isNaN(Number(mfr.formValues[3].trim())) ||
-        mfr.formValues[4].trim() == "" ||
-        isNaN(Number(mfr.formValues[4].trim())) ||
-        mfr.formValues[5].trim() == "" ||
-        isNaN(Number(mfr.formValues[5].trim()))
+        mfr.formValues[2].toString().trim() == "" ||
+        isNaN(Number(mfr.formValues[2].toString().trim())) ||
+        mfr.formValues[3].toString().trim() == "" ||
+        isNaN(Number(mfr.formValues[3].toString().trim())) ||
+        mfr.formValues[4].toString().trim() == "" ||
+        isNaN(Number(mfr.formValues[4].toString().trim())) ||
+        mfr.formValues[5].toString().trim() == "" ||
+        isNaN(Number(mfr.formValues[5].toString().trim()))
       ) {
         let msfr = await new MessageFormData()
           .title("错误")
@@ -1166,17 +1193,17 @@ const snowScripts: SnowScriptList = {
           .button1("确定")
           .button2("退出")
           .show(player);
-        if (msfr.canceled || msfr.selection == 2) {
+        if (msfr.selection == 1) {
           return false;
         }
         continue;
       }
       data.settings.new_player.limit_tag = mfr.formValues[0];
       data.settings.new_player.allow_snow = mfr.formValues[1];
-      data.settings.new_player.allow_area.begin_x = Number(mfr.formValues[2].trim());
-      data.settings.new_player.allow_area.begin_z = Number(mfr.formValues[3].trim());
-      data.settings.new_player.allow_area.end_x = Number(mfr.formValues[4].trim());
-      data.settings.new_player.allow_area.end_z = Number(mfr.formValues[5].trim());
+      data.settings.new_player.allow_area.begin_x = Number(mfr.formValues[2].toString().trim());
+      data.settings.new_player.allow_area.begin_z = Number(mfr.formValues[3].toString().trim());
+      data.settings.new_player.allow_area.end_x = Number(mfr.formValues[4].toString().trim());
+      data.settings.new_player.allow_area.end_z = Number(mfr.formValues[5].toString().trim());
       data.settings.new_player.guest_snow = mfr.formValues[6];
       saveData("@" + player.name);
 
@@ -1194,7 +1221,7 @@ const snowScripts: SnowScriptList = {
       .title("世界选项")
       .toggle("允许爆炸", data.settings.world.allow_explode)
       .show(player);
-    if (mfr.canceled || mfr.formValues == undefined) return false;
+    if (mfr.formValues == undefined) return false;
     data.settings.world.allow_explode = mfr.formValues[0];
     saveData("@" + player.name);
     return false;
@@ -1206,7 +1233,7 @@ const snowScripts: SnowScriptList = {
       .button("在线玩家列表")
       .button("输入玩家ID")
       .show(player);
-    if (afr.canceled || afr.selection == undefined) return false;
+    if (afr.selection == undefined) return false;
     // 在线玩家数组
     let playerList = [];
     for (let item of world.getPlayers()) {
@@ -1222,7 +1249,7 @@ const snowScripts: SnowScriptList = {
         afd2 = afd2.button(playerList[i].name);
       }
       let afr2 = await afd2.show(player);
-      if (afr2.canceled || afr2.selection == undefined) return false;
+      if (afr2.selection == undefined) return false;
       targetPlayer = playerList[afr2.selection].name;
       // tellMessage(moduleName, "targetPlayer = " + targetPlayer);
       resultData = data.players[targetPlayer];
@@ -1230,33 +1257,33 @@ const snowScripts: SnowScriptList = {
       // 输入玩家ID
       while (true) {
         let mfr = await new ModalFormData().title("玩家信息列表").textField("玩家ID", "输入玩家ID").show(player);
-        if (mfr.canceled || mfr.formValues == undefined) return false;
-        if (mfr.formValues[0].trim() == "") {
+        if (mfr.formValues == undefined) return false;
+        if (mfr.formValues[0].toString().trim() == "") {
           let msfr = await new MessageFormData()
             .title("错误")
             .body("玩家ID不可为空")
             .button1("确定")
             .button2("退出")
             .show(player);
-          if (msfr.canceled || msfr.selection == 2) {
+          if (msfr.selection == 1) {
             return false;
           }
           continue;
         }
-        if (!data.players[mfr.formValues[0].trim()]) {
+        if (!data.players[mfr.formValues[0].toString().trim()]) {
           let msfr = await new MessageFormData()
             .title("提示")
-            .body("玩家ID:" + mfr.formValues[0].trim() + "\n该玩家信息不存在")
+            .body("玩家ID:" + mfr.formValues[0].toString().trim() + "\n该玩家信息不存在")
             .button1("确定")
             .button2("退出")
             .show(player);
-          if (msfr.canceled || msfr.selection == 2) {
+          if (msfr.selection == 1) {
             return false;
           }
           continue;
           // if (msfr.selection == 2) continue;
         }
-        targetPlayer = mfr.formValues[0].trim();
+        targetPlayer = mfr.formValues[0].toString().trim();
         // resultData = {
         //   job: "无",
         //   goodat: "未知",
@@ -1364,7 +1391,7 @@ const snowScripts: SnowScriptList = {
       afd2 = afd2.button("编辑信息");
     }
     let afr2 = await afd2.show(player);
-    if (afr2.canceled || afr2.selection == undefined || afr2.selection == 0) return false;
+    if (afr2.selection == undefined || afr2.selection == 0) return false;
     if (afr2.selection == 1 && isAdmin(player.name)) {
       while (true) {
         // 编辑信息
@@ -1375,7 +1402,7 @@ const snowScripts: SnowScriptList = {
           .textField("所在籍", "在此输入", place)
           .textField("金币", "在此输入", "" + money)
           .show(player);
-        if (mfr.canceled || mfr.formValues == undefined) return false;
+        if (mfr.formValues == undefined) return false;
         if (isNaN(Number(mfr.formValues[3]))) {
           let msfr = await new MessageFormData()
             .title("错误")
@@ -1383,17 +1410,24 @@ const snowScripts: SnowScriptList = {
             .button1("确定")
             .button2("退出")
             .show(player);
-          if (msfr.canceled || msfr.selection == 2) {
+          if (msfr.selection == 1) {
             return false;
           }
-          if (msfr.selection == 1) continue;
+          if (msfr.selection == 0) continue;
         }
-        resultData.job = mfr.formValues[0].trim() == "" ? data.settings.players.default_job : mfr.formValues[0].trim();
+        resultData.job =
+          mfr.formValues[0].toString().trim() == ""
+            ? data.settings.players.default_job
+            : mfr.formValues[0].toString().trim();
         resultData.goodat =
-          mfr.formValues[1].trim() == "" ? data.settings.players.default_goodat : mfr.formValues[1].trim();
+          mfr.formValues[1].toString().trim() == ""
+            ? data.settings.players.default_goodat
+            : mfr.formValues[1].toString().trim();
         resultData.place =
-          mfr.formValues[2].trim() == "" ? data.settings.players.default_place : mfr.formValues[2].trim();
-        resultData.money = Number(mfr.formValues[3].trim());
+          mfr.formValues[2].toString().trim() == ""
+            ? data.settings.players.default_place
+            : mfr.formValues[2].toString().trim();
+        resultData.money = Number(mfr.formValues[3].toString().trim());
         // 完成
         let msfrFinish = await new MessageFormData()
           .title("提示")
@@ -1401,8 +1435,8 @@ const snowScripts: SnowScriptList = {
           .button1("保存更改")
           .button2("放弃更改")
           .show(player);
-        if (msfrFinish.canceled) return false;
-        if (msfrFinish.selection == 1) {
+
+        if (msfrFinish.selection == 0) {
           data.players[targetPlayer] = resultData;
           await saveData("@" + player.name);
           reloadData();
@@ -1432,7 +1466,7 @@ const snowScripts: SnowScriptList = {
         });
       }
       let afr = await afd.show(player);
-      if (afr.canceled || afr.selection == undefined) return undefined;
+      if (afr.selection == undefined) return undefined;
       return afr.selection;
     }
     async function chooseList(config: EntityClearConfigType): Promise<number | undefined> {
@@ -1451,7 +1485,7 @@ const snowScripts: SnowScriptList = {
         afd = afd.button(config.list[i].name);
       }
       let afr = await afd.show(player);
-      if (afr.canceled == true || afr.selection == undefined) return undefined;
+      if (afr.selection == undefined) return undefined;
       return afr.selection;
     }
     async function editConfigHead(
@@ -1481,35 +1515,35 @@ const snowScripts: SnowScriptList = {
           .toggle("清理前提醒", config.forecast)
           .slider("清理前多久提醒(秒)", 3, 300, 1, config.foretime)
           .show(player);
-        if (mdr.canceled || mdr.formValues == undefined) return undefined;
-        if (mdr.formValues[1].trim() == "") {
+        if (mdr.formValues == undefined) return undefined;
+        if (mdr.formValues[1].toString().trim() == "") {
           let msfr = await new MessageFormData()
             .title("错误")
             .body("配置名字不可为空")
             .button1("确定")
             .button2("退出")
             .show(player);
-          if (msfr.canceled || msfr.selection == 2) {
+          if (msfr.selection == 1) {
             return undefined;
           }
           continue;
         }
-        if (mdr.formValues[2].trim() == "") {
+        if (mdr.formValues[2].toString().trim() == "") {
           let msfr = await new MessageFormData()
             .title("错误")
             .body("显示名称不可为空")
             .button1("确定")
             .button2("退出")
             .show(player);
-          if (msfr.canceled || msfr.selection == 2) {
+          if (msfr.selection == 1) {
             return undefined;
           }
           continue;
         }
         if (
-          mdr.formValues[4].trim() == "" ||
-          isNaN(Number(mdr.formValues[4].trim())) ||
-          Number(mdr.formValues[4].trim()) <= 0
+          mdr.formValues[4].toString().trim() == "" ||
+          isNaN(Number(mdr.formValues[4].toString().trim())) ||
+          Number(mdr.formValues[4].toString().trim()) <= 0
         ) {
           let msfr = await new MessageFormData()
             .title("错误")
@@ -1517,30 +1551,30 @@ const snowScripts: SnowScriptList = {
             .button1("确定")
             .button2("退出")
             .show(player);
-          if (msfr.canceled || msfr.selection == 2) {
+          if (msfr.selection == 1) {
             return undefined;
           }
           continue;
         }
-        if (mdr.formValues[6] >= Number(mdr.formValues[4].trim())) {
+        if (Number(mdr.formValues[6]) >= Number(mdr.formValues[4].toString().trim())) {
           let msfr = await new MessageFormData()
             .title("错误")
             .body("清理前提醒时间大于或等于运行周期！")
             .button1("确定")
             .button2("退出")
             .show(player);
-          if (msfr.canceled || msfr.selection == 2) {
+          if (msfr.selection == 1) {
             return undefined;
           }
           continue;
         }
-        config.enable = mdr.formValues[0];
-        config.name = mdr.formValues[1];
-        config.show = mdr.formValues[2];
-        config.display = mdr.formValues[3];
-        config.time = mdr.formValues[4];
-        config.forecast = mdr.formValues[5];
-        config.foretime = mdr.formValues[6];
+        config.enable = mdr.formValues[0] ? true : false;
+        config.name = mdr.formValues[1].toString();
+        config.show = mdr.formValues[2].toString();
+        config.display = mdr.formValues[3] ? true : false;
+        config.time = Number(mdr.formValues[4]);
+        config.forecast = mdr.formValues[5] ? true : false;
+        config.foretime = Number(mdr.formValues[6]);
         return config;
         break;
       }
@@ -1594,7 +1628,7 @@ const snowScripts: SnowScriptList = {
           .button("删除实体")
           .button("添加实体")
           .show(player);
-        if (afr.canceled || afr.selection == undefined) return undefined;
+        if (afr.selection == undefined) return undefined;
         switch (afr.selection) {
           case 0: //运行规则
             if (!(await editConfigHead(resultConfig))) {
@@ -1625,9 +1659,9 @@ const snowScripts: SnowScriptList = {
                 );
               }
               let mfr = await mfd.show(player);
-              if (mfr.canceled == true || mfr.formValues == undefined) return undefined;
+              if (mfr.formValues == undefined) return undefined;
               for (let i = 0; i < length; ++i) {
-                resultConfig.list[targetList].types[i][1] = mfr.formValues[i];
+                resultConfig.list[targetList].types[i][1] = mfr.formValues[i] ? true : false;
               }
             }
             break;
@@ -1654,7 +1688,7 @@ const snowScripts: SnowScriptList = {
                 );
               }
               let mfr = await mfd.show(player);
-              if (mfr.canceled == true || mfr.selection == undefined) return undefined;
+              if (mfr.selection == undefined) return undefined;
               let msgResponse = await new MessageFormData()
                 .title("警告")
                 .body(
@@ -1669,7 +1703,7 @@ const snowScripts: SnowScriptList = {
                 .button1("确定删除")
                 .button2("还是算了")
                 .show(player);
-              if (msgResponse.selection == 1) {
+              if (msgResponse.selection == 0) {
                 resultConfig.list[targetList].types.splice(mfr.selection, 1);
               } else {
                 return undefined;
@@ -1687,26 +1721,29 @@ const snowScripts: SnowScriptList = {
                   .toggle("清除该实体", true)
                   .textField("实体中文备注(选填)", "输入实体中文备注")
                   .show(player);
-                if (mfr.canceled || mfr.formValues == undefined) return undefined;
-                if (mfr.formValues[0].trim() == "") {
+                if (mfr.formValues == undefined) return undefined;
+                if (mfr.formValues[0].toString().trim() == "") {
                   let msfr = await new MessageFormData()
                     .title("错误")
                     .body("实体ID不可为空")
                     .button1("确定")
                     .button2("退出")
                     .show(player);
-                  if (msfr.canceled || msfr.selection == 2) {
+                  if (msfr.selection == 1) {
                     return undefined;
                   }
                   continue;
                 }
-                if (mfr.formValues[2].trim() == "")
-                  resultConfig.list[targetList].types.push([mfr.formValues[0].trim(), mfr.formValues[1]]);
+                if (mfr.formValues[2].toString().trim() == "")
+                  resultConfig.list[targetList].types.push([
+                    mfr.formValues[0].toString().trim(),
+                    mfr.formValues[1] ? true : false,
+                  ]);
                 else
                   resultConfig.list[targetList].types.push([
-                    mfr.formValues[0].trim(),
-                    mfr.formValues[1],
-                    mfr.formValues[2].trim(),
+                    mfr.formValues[0].toString().trim(),
+                    mfr.formValues[1] ? true : false,
+                    mfr.formValues[2].toString().trim(),
                   ]);
                 break;
               }
@@ -1720,8 +1757,8 @@ const snowScripts: SnowScriptList = {
           .button1("保存更改")
           .button2("放弃更改")
           .show(player);
-        if (msfrFinish.canceled) return;
-        if (msfrFinish.selection == 1) {
+
+        if (msfrFinish.selection == 0) {
           return resultConfig;
         }
         return undefined;
@@ -1734,7 +1771,7 @@ const snowScripts: SnowScriptList = {
       .button("添加配置")
       .button("删除配置")
       .show(player);
-    if (afr.canceled || afr.selection == undefined) return false;
+    if (afr.selection == undefined) return false;
     switch (afr.selection) {
       case 0: //编辑配置
         {
@@ -1773,7 +1810,7 @@ const snowScripts: SnowScriptList = {
             .button1("确定删除")
             .button2("还是算了")
             .show(player);
-          if (msgResponse.selection == 1) {
+          if (msgResponse.selection == 0) {
             data.settings.entity_clear.config.splice(targetConfig, 1);
             saveData("@" + player.nameTag);
           } else {
@@ -1791,20 +1828,20 @@ const snowScripts: SnowScriptList = {
         .textField("实体清除机器人名字", "输入名字", data.settings.entity_clear.sender)
         .toggle("启用实体清除", data.settings.entity_clear.enable)
         .show(player);
-      if (mfr.canceled || mfr.formValues == undefined) return false;
-      if (mfr.formValues[0].trim() == "") {
+      if (mfr.formValues == undefined) return false;
+      if (mfr.formValues[0].toString().trim() == "") {
         let msfr = await new MessageFormData()
           .title("错误")
           .body("实体清除机器人名字不可为空")
           .button1("确定")
           .button2("退出")
           .show(player);
-        if (msfr.canceled || msfr.selection == 2) {
+        if (msfr.selection == 1) {
           return false;
         }
         continue;
       }
-      data.settings.entity_clear.sender = mfr.formValues[0].trim();
+      data.settings.entity_clear.sender = mfr.formValues[0].toString().trim();
       data.settings.entity_clear.enable = mfr.formValues[1];
       saveData("@" + player.name);
       return false;
@@ -1816,7 +1853,7 @@ const snowScripts: SnowScriptList = {
       .slider("亮度", 0, 15, 1, 15)
       .slider("数量", 1, 64, 1, 64)
       .show(player);
-    if (mfr.canceled || mfr.formValues == undefined) return false;
+    if (mfr.formValues == undefined) return false;
     player.runCommandAsync("give @s light_block " + mfr.formValues[1] + " " + mfr.formValues[0]);
     return false;
   },
@@ -1835,7 +1872,7 @@ const snowScripts: SnowScriptList = {
         .button1("返回上一级")
         .button2("退出菜单")
         .show(player);
-      if (msgResponse.canceled || msgResponse.selection == 1) {
+      if (msgResponse.selection == 0) {
         return false;
       }
       return true;
@@ -1858,7 +1895,7 @@ const snowScripts: SnowScriptList = {
         .button1("返回上一级")
         .button2("退出菜单")
         .show(player);
-      if (msgResponse.canceled || msgResponse.selection == 1) {
+      if (msgResponse.selection == 0) {
         return false;
       }
       return true;
@@ -1889,20 +1926,20 @@ const snowScripts: SnowScriptList = {
         .textField("备份名称(同时作为存档文件夹名称)", "输入备份名称", resultBackup.path)
         .textField("备注", "输入备注", resultBackup.append)
         .show(player);
-      if (mfr.canceled || mfr.formValues == undefined) return false;
-      if (mfr.formValues[0].trim() == "") {
+      if (mfr.formValues == undefined) return false;
+      if (mfr.formValues[0].toString().trim() == "") {
         let msfr = await new MessageFormData()
           .title("错误")
           .body("备份名称不可为空")
           .button1("确定")
           .button2("退出")
           .show(player);
-        if (msfr.canceled || msfr.selection == 2) {
+        if (msfr.selection == 1) {
           return false;
         }
         continue;
       }
-      let path = mfr.formValues[0].trim();
+      let path = mfr.formValues[0].toString().trim();
       if (
         backupInfo.list.forEach((e: any) => {
           return e.path == path;
@@ -1914,13 +1951,13 @@ const snowScripts: SnowScriptList = {
           .button1("确定")
           .button2("退出")
           .show(player);
-        if (msfr.canceled || msfr.selection == 2) {
+        if (msfr.selection == 1) {
           return false;
         }
         continue;
       }
-      resultBackup.path = mfr.formValues[0];
-      resultBackup.append = mfr.formValues[1];
+      resultBackup.path = mfr.formValues[0].toString();
+      resultBackup.append = mfr.formValues[1].toString();
 
       let msfr = await new MessageFormData()
         .title("提示")
@@ -1928,7 +1965,7 @@ const snowScripts: SnowScriptList = {
         .button1("确定")
         .button2("退出")
         .show(player);
-      if (msfr.canceled || msfr.selection == 2) {
+      if (msfr.selection == 1) {
         return false;
       }
       // 创建备份
@@ -1949,7 +1986,7 @@ const snowScripts: SnowScriptList = {
           .button1("确定")
           .button2("退出")
           .show(player);
-        if (msfr.canceled || msfr.selection == 2) return false;
+        if (msfr.selection == 1) return false;
         continue;
       }
       // break;
@@ -1985,20 +2022,20 @@ const snowScripts: SnowScriptList = {
           .textField("备份名称(同时作为存档文件夹名称)", "输入备份名称", info.path)
           .textField("备注", "输入备注", info.append)
           .show(player);
-        if (mfr.canceled || mfr.formValues == undefined) return undefined;
-        if (mfr.formValues[0].trim() == "") {
+        if (mfr.formValues == undefined) return undefined;
+        if (mfr.formValues[0].toString().trim() == "") {
           let msfr = await new MessageFormData()
             .title("错误")
             .body("备份名称不可为空")
             .button1("确定")
             .button2("退出")
             .show(player);
-          if (msfr.canceled || msfr.selection == 2) {
+          if (msfr.selection == 1) {
             return undefined;
           }
           continue;
         }
-        let path = mfr.formValues[0].trim();
+        let path = mfr.formValues[0].toString().trim();
         if (
           backupInfo.list.forEach((e: any) => {
             return e.path == path;
@@ -2010,13 +2047,13 @@ const snowScripts: SnowScriptList = {
             .button1("确定")
             .button2("退出")
             .show(player);
-          if (msfr.canceled || msfr.selection == 2) {
+          if (msfr.selection == 1) {
             return undefined;
           }
           continue;
         }
-        resultInfo.path = mfr.formValues[0].trim();
-        resultInfo.append = mfr.formValues[1];
+        resultInfo.path = mfr.formValues[0].toString().trim();
+        resultInfo.append = mfr.formValues[1].toString();
         return resultInfo;
         // let msfr = await new MessageFormData()
         //   .title("警告")
@@ -2024,7 +2061,7 @@ const snowScripts: SnowScriptList = {
         //   .button1("确定")
         //   .button2("退出")
         //   .show(player);
-        // if (msfr.canceled || msfr.selection == 2) {
+        // if (msfr.selection == 2) {
         //   return undefined;
         // }
 
@@ -2065,7 +2102,7 @@ const snowScripts: SnowScriptList = {
           );
         } // for
         let afr = await afd.show(player);
-        if (length == 0 || afr.canceled || afr.selection == undefined) {
+        if (length == 0 || afr.selection == undefined) {
           return undefined;
         }
         return afr.selection;
@@ -2111,7 +2148,7 @@ const snowScripts: SnowScriptList = {
         .button("立即回档")
         .button("删除备份")
         .show(player);
-      if (afr.canceled || afr.selection == undefined) continue;
+      if (afr.selection == undefined) continue;
       switch (afr.selection) {
         // case 0: // 编辑信息
         //   {
@@ -2132,7 +2169,7 @@ const snowScripts: SnowScriptList = {
         case 0: // 立即回档
           {
             let mdr = await new ModalFormData().title("立即回档").textField("回档原因", "请输入回档原因").show(player);
-            if (mdr.canceled || mdr.formValues == undefined) {
+            if (mdr.formValues == undefined) {
               continue;
             }
             let callback = async (e: (string | boolean)[]) => {
@@ -2183,7 +2220,7 @@ const snowScripts: SnowScriptList = {
               .button1("确定")
               .button2("退出")
               .show(player);
-            if (msfr.canceled || msfr.selection == undefined || msfr.selection == 2) {
+            if (msfr.selection == undefined || msfr.selection == 1) {
               continue;
             }
             // 删除操作
@@ -2196,7 +2233,7 @@ const snowScripts: SnowScriptList = {
                 .button1("确定")
                 .button2("退出")
                 .show(player);
-              if (msfr.canceled || msfr.selection == 2) return false;
+              if (msfr.selection == 1) return false;
               continue;
             } else {
               let msfr = await new MessageFormData()
@@ -2205,7 +2242,7 @@ const snowScripts: SnowScriptList = {
                 .button1("确定")
                 .button2("退出")
                 .show(player);
-              if (msfr.canceled || msfr.selection == 2) return false;
+              if (msfr.selection == 1) return false;
               continue;
             }
           }
@@ -2377,7 +2414,7 @@ async function showSnowList(player: Player, list_key: string): Promise<boolean> 
   let timer = 0;
   while (true) {
     // 显示菜单
-    let actionFormData = new ActionFormData().title(data.snow[list_key].title);
+    let actionFormData = new ActionFormData(); //.title(data.snow[list_key].title);
     if (data.snow[list_key].body != "") {
       // Body 文字
       actionFormData = actionFormData.body(await analyseSnowString(data.snow[list_key].body, player, list_key));
@@ -2401,12 +2438,12 @@ async function showSnowList(player: Player, list_key: string): Promise<boolean> 
         );
       }
     }
-
+    actionFormData = actionFormData.title(data.snow[list_key].title);
     // 显示
     let actionFormResponse = await actionFormData.show(player);
 
     // 处理 Response
-    if (actionFormResponse.canceled || actionFormResponse.selection == undefined) {
+    if (actionFormResponse.selection == undefined) {
       return true;
     }
 
@@ -2428,7 +2465,7 @@ async function showSnowList(player: Player, list_key: string): Promise<boolean> 
             .button1("确定")
             .button2("退出菜单")
             .show(player);
-          if (msfrNoTag.canceled || msfrNoTag.selection == 2) {
+          if (msfrNoTag.selection == 1) {
             return true; // 退出菜单
           }
           break; // 确定
@@ -2448,17 +2485,28 @@ async function showSnowList(player: Player, list_key: string): Promise<boolean> 
                 //   .button1("确定")
                 //   .button2("退出")
                 //   .show(player);
-                // if (msfr.selection == 1 || msfr.canceled) return false;
+                // if (msfr.selection == 1) return false;
                 // if (msfr.selection == 2) return true;
                 return false;
               }
             }
             // 传送
-            player.teleport(
-              data.snow[list_key].list[index].location,
-              world.getDimension(data.snow[list_key].list[index].dimension),
-              0,
-              0
+            // player.teleport(
+            //   data.snow[list_key].list[index].location,
+            //   world.getDimension(data.snow[list_key].list[index].dimension),
+            //   0,
+            //   0
+            // );
+            player.runCommandAsync(
+              "execute in " +
+                data.snow[list_key].list[index].dimension +
+                " run tp " +
+                data.snow[list_key].list[index].location.x +
+                " " +
+                data.snow[list_key].list[index].location.y +
+                " " +
+                data.snow[list_key].list[index].location.z +
+                " 0 0"
             );
             // 显示
             if (data.snow[list_key].list[index].show) {
@@ -2588,8 +2636,8 @@ function initCuberSnow() {
   //     showSnowMenuNew(e.sender);
   //   }
   // });
-  world.events.beforeItemUse.subscribe(async (e) => {
-    if (e.item.typeId != "minecraft:snowball" || e.source.typeId != "minecraft:player") return;
+  world.beforeEvents.itemUse.subscribe(async (e) => {
+    if (e.itemStack.typeId != "minecraft:snowball" || e.source.typeId != "minecraft:player") return;
     if (!e.source.hasTag(data.settings.new_player.limit_tag)) {
       if (!data.settings.new_player.allow_snow) {
         let msfr = await new MessageFormData()
@@ -2609,7 +2657,7 @@ function initCuberSnow() {
     e.source.runCommandAsync("kill @e[type=snowball, c=1]");
     showSnowMenu(e.source as Player);
   });
-  world.events.beforeChat.subscribe((e) => {
+  world.beforeEvents.chatSend.subscribe((e) => {
     if (e.message.startsWith("#签到") || e.message.startsWith("#checkin")) {
       let bCheckin = false;
       if (data.players[e.sender.name]) {
