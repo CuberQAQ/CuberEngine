@@ -5,7 +5,7 @@
 // Version: 1.0.0
 // Copyright CuberQAQ. All rights reserved.
 import { GameMode, Player, ScoreboardIdentityType, system, world, } from "@minecraft/server";
-import { data } from "./Data";
+import { data, permissionList } from "./Data";
 const adminList = ["Justin Ai06", "CuberQAQ", "ChristianBez787", "jf2542"];
 function tellErrorMessage(sender, message) {
     world
@@ -89,6 +89,53 @@ function test(func, module_name, append) {
     }
     catch (e) {
         anaylseError(module_name ?? "UTILS_TEST", e, "(Test Function)" + (append ?? ""));
+    }
+}
+// 妈的，新版本没法在event里调用敏感api 可以套层壳
+function delayBox(func, delay_tick = 0) {
+    if (delay_tick == 0) {
+        return new Promise((resolve, reject) => {
+            system.run(async () => {
+                try {
+                    await func();
+                    resolve();
+                }
+                catch (e) {
+                    anaylseError("DelayBox", e, "Error When Run Function in DelayBox");
+                    reject();
+                }
+            });
+        });
+    }
+    else {
+        return new Promise((resolve, reject) => {
+            system.runTimeout(async () => {
+                try {
+                    await func();
+                    resolve();
+                }
+                catch (e) {
+                    anaylseError("DelayBox", e, "Error When Run Function in DelayBox");
+                    reject();
+                }
+            }, delay_tick);
+        });
+    }
+}
+function permissionTest(player_name, permission_key) {
+    if (!permissionList) {
+        tellErrorMessage("Permission", "Permission list Undefined!");
+        return false;
+    }
+    if (!permissionList[permission_key]) {
+        tellErrorMessage("Permission", "Unknown Permission Key: " + permission_key);
+        return false;
+    }
+    if (permissionList[permission_key].find((value) => value == player_name)) {
+        return true;
+    }
+    else {
+        return false;
     }
 }
 function getPlayerScore(objective, target) {
@@ -180,6 +227,6 @@ function getDate(utc) {
 const setTimeout = function (func, ticktime = 0) {
     system.runTimeout(func(), ticktime);
 };
-export { tellErrorMessage, tellSuccessMessage, tellMessage, isAdmin, anaylseError, test, getPlayerScore, getDate, getGamemode, setTimeout, };
+export { tellErrorMessage, tellSuccessMessage, tellMessage, isAdmin, anaylseError, test, getPlayerScore, getDate, getGamemode, setTimeout, delayBox, };
 
 //# sourceMappingURL=../../_CuberEngineDebug/utils.js.map

@@ -118,9 +118,9 @@ function test(func: () => any, module_name?: string, append?: string) {
 function delayBox(func: Function, delay_tick: number = 0) {
   if (delay_tick == 0) {
     return new Promise<undefined>((resolve: Function, reject: Function) => {
-      system.run(() => {
+      system.run(async () => {
         try {
-          func();
+          await func();
           resolve();
         } catch (e) {
           anaylseError("DelayBox", e, "Error When Run Function in DelayBox");
@@ -130,9 +130,9 @@ function delayBox(func: Function, delay_tick: number = 0) {
     });
   } else {
     return new Promise<undefined>((resolve: Function, reject: Function) => {
-      system.runTimeout(() => {
+      system.runTimeout(async () => {
         try {
-          func();
+          await func();
           resolve();
         } catch (e) {
           anaylseError("DelayBox", e, "Error When Run Function in DelayBox");

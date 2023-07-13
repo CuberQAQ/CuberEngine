@@ -123,6 +123,16 @@ const snowScripts: SnowScriptList = {
     return true;
   },
   developingFunction: async function (player, list_key) {
+    let msfrNoTag = await new MessageFormData()
+      .title("提示")
+      .body("§e§l施工中...\n§r该功能暂未开放，敬请期待！")
+      .button1("确定")
+      .button2("退出菜单")
+      .show(player);
+    if (msfrNoTag.selection == 1) {
+      return true; // 退出菜单
+    }
+    return false; // 确定
     tellMessage(moduleName, "§e§l@" + player.name + " §r使用了§c§l创世神修复§r工具！");
     sudo("reload", player.name);
     return true;
@@ -546,7 +556,7 @@ const snowScripts: SnowScriptList = {
                       }
                       // 检查是否存在
                       if (afrItemEditor2.formValues[1] == true) {
-                        if (!data.snow[Number(afrItemEditor2.formValues[0])]) {
+                        if (!data.snow[String(afrItemEditor2.formValues[0])]) {
                           let msfr = await new MessageFormData()
                             .title("错误")
                             .body("目标菜单不存在")
@@ -647,7 +657,7 @@ const snowScripts: SnowScriptList = {
                 }
                 // 检查是否存在
                 if (afrItemEditor2.formValues[1] == true) {
-                  if (!snowScripts[Number(afrItemEditor2.formValues[0])]) {
+                  if (!snowScripts[String(afrItemEditor2.formValues[0])]) {
                     let msfr = await new MessageFormData()
                       .title("错误")
                       .body("目标脚本函数不存在")
@@ -867,7 +877,7 @@ const snowScripts: SnowScriptList = {
                 continue;
               }
               // 检查是否存在
-              if (!data.snow[Number(afrItemEditor2.formValues[0])]) {
+              if (!data.snow[String(afrItemEditor2.formValues[0])]) {
                 let msfr = await new MessageFormData()
                   .title("错误")
                   .body("目标菜单不存在")

@@ -7,7 +7,7 @@
 import { Player, world, system, GameMode } from "@minecraft/server";
 import { data, saveData } from "./Data";
 import { addRunBeforeTp } from "./CuberSnow";
-import { anaylseError, getGamemode, tellMessage } from "./utils";
+import { anaylseError, delayBox, getGamemode, tellMessage } from "./utils";
 import { MessageFormData } from "@minecraft/server-ui";
 const moduleName = "ServerManage";
 const moduleVersion = "0.1.0";
@@ -88,13 +88,13 @@ function initServerManage() {
         }
     });
     // 玩家数据初始化
-    world.afterEvents.playerJoin.subscribe((e) => {
-        if (data.players[e.playerName] == undefined) {
-            tellMessage(moduleName, "初始化个人信息 §e@" + e.playerName);
+    world.afterEvents.playerSpawn.subscribe((e) => {
+        if (data.players[e.player.name] == undefined) {
+            tellMessage(moduleName, "初始化个人信息 §e@" + e.player.name);
             // e.player.runCommandAsync('scoreboard players add "' + e.player.name + '" time 0');
-            data.players[e.playerName] = {
+            data.players[e.player.name] = {
                 job: data.settings.players.default_job,
-                score_id: world.getPlayers({ name: e.playerName })[0].scoreboardIdentity?.id,
+                score_id: e.player.scoreboardIdentity?.id,
                 goodat: data.settings.players.default_goodat,
                 money: data.settings.players.default_money,
                 place: data.settings.players.default_place,
@@ -102,12 +102,12 @@ function initServerManage() {
                 last_checkin: 0,
                 checkin_times: 0,
             };
-            world.getPlayers({ name: e.playerName })[0].runCommandAsync("give @s snowball 16");
-            saveData();
+            world.getPlayers({ name: e.player.name })[0].runCommandAsync("give @s snowball 16");
+            delayBox(saveData);
         }
         else {
-            data.players[e.playerName].last_login = new Date().getTime();
-            saveData();
+            data.players[e.player.name].last_login = new Date().getTime();
+            delayBox(saveData);
         }
     });
     world.afterEvents.entityHitBlock.subscribe((e) => {

@@ -9,10 +9,12 @@ import { tellErrorMessage } from "./utils";
 import { system } from "@minecraft/server";
 const moduleName = "Data";
 const moduleVersion = "0.1.1";
-var data = {};
+var data = null;
+var permissionList = null;
 var backupInfo = {};
 function initData() {
     reloadData();
+    reloadPermission();
     reloadBackupInfo();
     return { moduleName, moduleVersion };
 }
@@ -35,6 +37,27 @@ function reloadData() {
     }, (res) => {
         console.error("[CuberEngine] HTTP Get Data Failed.");
         tellErrorMessage(moduleName, "HTTP GET Data Failed. [NULL] " + res);
+    });
+}
+function reloadPermission() {
+    console.log("[CuberEngine] Reload Permission List...");
+    let req = new HttpRequest("http://localhost:25641/permission.json");
+    req.setMethod(HttpRequestMethod.Get);
+    req.addHeader("reload", "true");
+    req.setTimeout(60);
+    http.request(req).then((res) => {
+        if (res.status == 200) {
+            console.log("[CuberEngine] HTTP Get Permission List Succeeded.");
+            // tellSuccessMessage(moduleName, "HTTP Get Data Succeeded. [" + res.status + "]");
+            permissionList = JSON.parse(decodeURIComponent(res.body));
+        }
+        else {
+            console.error("[CuberEngine] HTTP Get Permission List Failed.");
+            tellErrorMessage(moduleName, "HTTP Get Permission List Failed. [" + res.status + "]");
+        }
+    }, (res) => {
+        console.error("[CuberEngine] HTTP Get Permission List Failed.");
+        tellErrorMessage(moduleName, "HTTP Get Permission List Failed. [NULL] " + res);
     });
 }
 function reloadBackupInfo() {
@@ -187,6 +210,22 @@ async function saveData(append) {
         tellErrorMessage(moduleName, "HTTP Save Data Failed [" + response.status + "]");
     }
 }
+async function savePermission(append) {
+    let require = new HttpRequest("http://127.0.0.1:25641/permission.json");
+    require.setMethod(HttpRequestMethod.Post);
+    require.addHeader("upgrade", "save");
+    if (append)
+        require.addHeader("append", append);
+    require.addHeader("Content-Type", "application/json; charset=utf-8");
+    //require.addHeader("cookie", encodeURIComponent(JSON.stringify(data)));
+    require.setBody(JSON.stringify(permissionList));
+    // require.setBody(encodeURIComponent(JSON.stringify(data)));
+    require.setTimeout(60);
+    let response = await http.request(require);
+    if (response.status != 200) {
+        tellErrorMessage(moduleName, "HTTP Save Permission List Failed [" + response.status + "]");
+    }
+}
 async function saveBackupInfo(append) {
     let require = new HttpRequest("http://127.0.0.1:25641/backup/info.json");
     require.setMethod(HttpRequestMethod.Post);
@@ -203,6 +242,6 @@ async function saveBackupInfo(append) {
         tellErrorMessage(moduleName, "HTTP Save BackupInfo Failed [" + response.status + "]");
     }
 }
-export { initData, data, saveData, reloadData, backupInfo, saveBackupInfo, reloadBackupInfo, restore, backup, delBackup, sudo, };
+export { initData, data, permissionList, saveData, savePermission, reloadPermission, reloadData, backupInfo, saveBackupInfo, reloadBackupInfo, restore, backup, delBackup, sudo, };
 
 //# sourceMappingURL=../../_CuberEngineDebug/Data.js.map
