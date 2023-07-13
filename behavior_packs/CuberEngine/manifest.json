@@ -4,8 +4,8 @@
     "name": "CuberEngine",
     "description": "My TypeScript Project",
     "uuid": "de4870e2-a392-4d7b-b6cf-a11da922670f",
-    "version": [0, 1, 0],
-    "min_engine_version": [1, 19, 50]
+    "version": [0, 1, 1],
+    "min_engine_version": [1, 20, 0]
   },
   "modules": [
     {
@@ -20,11 +20,11 @@
   "dependencies": [
     {
       "module_name": "@minecraft/server",
-      "version": "1.1.0-beta"
+      "version": "1.4.0-beta"
     },
     {
       "module_name": "@minecraft/server-ui",
-      "version": "1.0.0-beta"
+      "version": "1.2.0-beta"
     },
     {
       "module_name": "@minecraft/server-net",

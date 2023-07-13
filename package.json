@@ -19,10 +19,12 @@
     "enablemcpreviewloopback": "CheckNetIsolation.exe LoopbackExempt -a -p=S-1-15-2-424268864-5579737-879501358-346833251-474568803-887069379-4040235476"
   },
   "dependencies": {
-    "@minecraft/server": "1.1.0-beta.release.1.19.50",
-    "@minecraft/server-admin": "^1.0.0-beta.release.1.19.50",
-    "@minecraft/server-net": "1.0.0-beta.release.1.19.50",
-    "@minecraft/server-ui": "1.0.0-beta.release.1.19.50",
+    "@microsoft/api-extractor": "^7.36.1",
+    "@minecraft/server": "^1.4.0-beta.1.20.10-stable",
+    "@minecraft/server-admin": "^1.0.0-beta.1.20.0-stable",
+    "@minecraft/server-net": "^1.0.0-beta.1.20.10-stable",
+    "@minecraft/server-ui": "^1.2.0-beta.1.20.10-stable",
+    "@minecraft/vanilla-data": "^1.20.0",
     "@types/graceful-fs": "^4.1.6",
     "decode-uri-component": "^0.2.2",
     "jsonfile": "^6.1.0"

@@ -4,9 +4,9 @@
 // Based on GameTest Framework (https://learn.microsoft.com/zh-cn/minecraft/creator/scriptapi/)
 // Version: 1.0.0
 // Copyright CuberQAQ. All rights reserved.
-import { GameMode, Player, ScoreboardIdentityType, world } from "@minecraft/server";
+import { GameMode, Player, ScoreboardIdentityType, system, world, } from "@minecraft/server";
 import { data } from "./Data";
-const adminList = ["Justin Ai06", "CuberQAQ", "ChristianBez787", "jf2542", "PilotCrib566096"];
+const adminList = ["Justin Ai06", "CuberQAQ", "ChristianBez787", "jf2542"];
 function tellErrorMessage(sender, message) {
     world
         .getDimension("overworld")
@@ -15,7 +15,7 @@ function tellErrorMessage(sender, message) {
         "§r] §c" +
         message.replace(/"/g, '\\"') +
         '"}]} ');
-    world.broadcastClientMessage(sender, message);
+    // world.broadcastClientMessage(sender, message);
 }
 function tellSuccessMessage(sender, message) {
     world
@@ -25,7 +25,7 @@ function tellSuccessMessage(sender, message) {
         "§r] §a" +
         message.replace(/"/g, '\\"') +
         '"}]} ');
-    world.broadcastClientMessage(sender, message);
+    // world.broadcastClientMessage(sender, message);
 }
 function anaylseError(module_name, error, append) {
     if (error instanceof Error) {
@@ -74,7 +74,7 @@ function tellMessage(sender, message) {
             "§r] " +
             message.replace(/"/g, '\\"') +
             '"}]} ');
-        world.broadcastClientMessage(sender, message);
+        // world.broadcastClientMessage(sender, message);
     }
     catch (e) {
         anaylseError("UTILS", e, "In tellMessage");
@@ -102,7 +102,7 @@ function getPlayerScore(objective, target) {
             return undefined;
         let targetId = data.players[target].score_id;
         let participant = participants.find((item) => {
-            if (item.type == ScoreboardIdentityType.player) {
+            if (item.type == ScoreboardIdentityType.Player) {
                 return item.id == targetId;
             }
             else {
@@ -116,11 +116,11 @@ function getPlayerScore(objective, target) {
     }
     else if (target instanceof Player) {
         let participant = participants.find((item) => {
-            if (item.type == ScoreboardIdentityType.player) {
+            if (item.type == ScoreboardIdentityType.Player) {
                 try {
                     // tellMessage("getScore", "item.id=" + item.id);
                     // tellMessage("getScore", "target.id=" + target.id);
-                    return item.id == target.scoreboard.id;
+                    return item.id == target.scoreboardIdentity?.id;
                 }
                 catch (e) {
                     anaylseError("getScore", e, "item:" + item.displayName);
@@ -178,18 +178,7 @@ function getDate(utc) {
  * @example 异步模块，使用promise封装，基于tick事件
  */
 const setTimeout = function (func, ticktime = 0) {
-    return new Promise((resolve) => {
-        ticktime = ticktime | 0;
-        const tickEvent = () => {
-            if (ticktime <= 0) {
-                func();
-                world.events.tick.unsubscribe(tickEvent);
-                resolve();
-            }
-            ticktime--;
-        };
-        world.events.tick.subscribe(tickEvent);
-    });
+    system.runTimeout(func(), ticktime);
 };
 export { tellErrorMessage, tellSuccessMessage, tellMessage, isAdmin, anaylseError, test, getPlayerScore, getDate, getGamemode, setTimeout, };
 

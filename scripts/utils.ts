@@ -6,10 +6,19 @@
 
 // Copyright CuberQAQ. All rights reserved.
 
-import { Entity, GameMode, Player, ScoreboardIdentityType, ScoreboardObjective, World, world } from "@minecraft/server";
-import { data } from "./Data";
+import {
+  Entity,
+  GameMode,
+  Player,
+  ScoreboardIdentityType,
+  ScoreboardObjective,
+  World,
+  system,
+  world,
+} from "@minecraft/server";
+import { data, permissionList } from "./Data";
 
-const adminList = ["Justin Ai06", "CuberQAQ", "ChristianBez787", "jf2542", "PilotCrib566096"];
+const adminList = ["Justin Ai06", "CuberQAQ", "ChristianBez787", "jf2542"];
 
 function tellErrorMessage(sender: string, message: string) {
   world
@@ -21,7 +30,7 @@ function tellErrorMessage(sender: string, message: string) {
         message.replace(/"/g, '\\"') +
         '"}]} '
     );
-  world.broadcastClientMessage(sender, message);
+  // world.broadcastClientMessage(sender, message);
 }
 function tellSuccessMessage(sender: string, message: string) {
   world
@@ -33,7 +42,7 @@ function tellSuccessMessage(sender: string, message: string) {
         message.replace(/"/g, '\\"') +
         '"}]} '
     );
-  world.broadcastClientMessage(sender, message);
+  // world.broadcastClientMessage(sender, message);
 }
 function anaylseError(module_name: string, error: any, append?: string) {
   if (error instanceof Error) {
@@ -90,7 +99,7 @@ function tellMessage(sender: string, message: string) {
           message.replace(/"/g, '\\"') +
           '"}]} '
       );
-    world.broadcastClientMessage(sender, message);
+    // world.broadcastClientMessage(sender, message);
   } catch (e) {
     anaylseError("UTILS", e, "In tellMessage");
   }
@@ -105,6 +114,49 @@ function test(func: () => any, module_name?: string, append?: string) {
     anaylseError(module_name ?? "UTILS_TEST", e, "(Test Function)" + (append ?? ""));
   }
 }
+// 妈的，新版本没法在event里调用敏感api 可以套层壳
+function delayBox(func: Function, delay_tick: number = 0) {
+  if (delay_tick == 0) {
+    return new Promise<undefined>((resolve: Function, reject: Function) => {
+      system.run(() => {
+        try {
+          func();
+          resolve();
+        } catch (e) {
+          anaylseError("DelayBox", e, "Error When Run Function in DelayBox");
+          reject();
+        }
+      });
+    });
+  } else {
+    return new Promise<undefined>((resolve: Function, reject: Function) => {
+      system.runTimeout(() => {
+        try {
+          func();
+          resolve();
+        } catch (e) {
+          anaylseError("DelayBox", e, "Error When Run Function in DelayBox");
+          reject();
+        }
+      }, delay_tick);
+    });
+  }
+}
+function permissionTest(player_name: string, permission_key: string): boolean {
+  if (!permissionList) {
+    tellErrorMessage("Permission", "Permission list Undefined!");
+    return false;
+  }
+  if (!permissionList[permission_key]) {
+    tellErrorMessage("Permission", "Unknown Permission Key: " + permission_key);
+    return false;
+  }
+  if (permissionList[permission_key].find((value) => value == player_name)) {
+    return true;
+  } else {
+    return false;
+  }
+}
 function getPlayerScore(objective: ScoreboardObjective, target?: Player | Entity | string): number | undefined {
   if (!target || !objective) return undefined;
   let participants = objective.getParticipants();
@@ -113,7 +165,7 @@ function getPlayerScore(objective: ScoreboardObjective, target?: Player | Entity
     if (!data.players[target]) return undefined;
     let targetId = data.players[target].score_id;
     let participant = participants.find((item) => {
-      if (item.type == ScoreboardIdentityType.player) {
+      if (item.type == ScoreboardIdentityType.Player) {
         return item.id == targetId;
       } else {
         return false;
@@ -123,11 +175,11 @@ function getPlayerScore(objective: ScoreboardObjective, target?: Player | Entity
     else return objective.getScore(participant);
   } else if (target instanceof Player) {
     let participant = participants.find((item) => {
-      if (item.type == ScoreboardIdentityType.player) {
+      if (item.type == ScoreboardIdentityType.Player) {
         try {
           // tellMessage("getScore", "item.id=" + item.id);
           // tellMessage("getScore", "target.id=" + target.id);
-          return item.id == target.scoreboard.id;
+          return item.id == target.scoreboardIdentity?.id;
         } catch (e) {
           anaylseError("getScore", e, "item:" + item.displayName);
         }
@@ -177,19 +229,8 @@ function getDate(utc?: number): number {
  * @returns {Promise}
  * @example 异步模块，使用promise封装，基于tick事件
  */
-const setTimeout = function (func: Function, ticktime: number = 0): Promise<any> {
-  return new Promise((resolve: Function) => {
-    ticktime = ticktime | 0;
-    const tickEvent = () => {
-      if (ticktime <= 0) {
-        func();
-        world.events.tick.unsubscribe(tickEvent);
-        resolve();
-      }
-      ticktime--;
-    };
-    world.events.tick.subscribe(tickEvent);
-  });
+const setTimeout = function (func: Function, ticktime: number = 0): void {
+  system.runTimeout(func(), ticktime);
 };
 export {
   tellErrorMessage,
@@ -202,4 +243,5 @@ export {
   getDate,
   getGamemode,
   setTimeout,
+  delayBox,
 };

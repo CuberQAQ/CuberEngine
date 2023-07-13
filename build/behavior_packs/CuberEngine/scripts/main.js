@@ -91,6 +91,6 @@ catch (e) {
         tellErrorMessage(moduleName, "ERROR: Catch a Exceptation when Init Module §lTest§r§c (Type:" + typeof e + ")");
     }
 }
-tellMessage(moduleName, "Package §e§lCuberEngine§r (§e" + moduleVersion + "§r) Loaded");
+tellMessage(moduleName, "§b§l雪球菜单III§r(" + moduleVersion + ") §a§l已启动！");
 
 //# sourceMappingURL=../../_CuberEngineDebug/main.js.map

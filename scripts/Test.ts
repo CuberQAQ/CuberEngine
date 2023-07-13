@@ -1,10 +1,10 @@
-import { Player, world, DynamicPropertiesDefinition, PropertyRegistry, system } from "@minecraft/server";
+import { Player, world, system } from "@minecraft/server";
 import { ActionFormData, MessageFormData } from "@minecraft/server-ui";
 import { anaylseError, isAdmin, tellErrorMessage, tellMessage, tellSuccessMessage, test } from "./utils";
 import { http, HttpClient, HttpRequest, HttpResponse, HttpHeader, HttpRequestMethod } from "@minecraft/server-net";
 import * as fs from "graceful-fs";
 import { SecretString, secrets } from "@minecraft/server-admin";
-import { backupInfo, data, reloadData, saveData } from "./Data";
+import { backupInfo, data, reloadData, saveData, sudo } from "./Data";
 import { clearEntity } from "./ServerManage";
 const overworld = world.getDimension("overworld");
 const nether = world.getDimension("nether");
@@ -22,14 +22,14 @@ const testJson = {
 };
 const fileName = "test.json";
 function initTest() {
-  world.events.beforeChat.subscribe(async (e) => {
+  world.beforeEvents.chatSend.subscribe(async (e) => {
     try {
       if (/^#cuber /.test(e.message)) {
         if (isAdmin(e.sender.name)) {
           if (/^#cuber net/.test(e.message)) {
             tellMessage(moduleName, "Net Test Start");
             let req = new HttpRequest("http://localhost:25641/data.json");
-            req.setMethod(HttpRequestMethod.GET);
+            req.setMethod(HttpRequestMethod.Get);
             req.addHeader("reload", "true");
             req.setTimeout(60);
             http.request(req).then(
@@ -56,7 +56,7 @@ function initTest() {
           } else if (/^#cuber save/.test(e.message)) {
             tellMessage(moduleName, "Net Test Save");
             let request = new HttpRequest("http://localhost:25641/data.json");
-            request.setMethod(HttpRequestMethod.POST);
+            request.setMethod(HttpRequestMethod.Post);
             request.addHeader("upgrade", "save");
             request.addHeader("Content-Type", "application/json; charset=utf-8");
             request.addHeader("cookie", encodeURIComponent(e.message.replace(/^#cuber save/, "")));
@@ -81,9 +81,9 @@ function initTest() {
           } else if (/^#cuber send/.test(e.message)) {
             tellMessage(moduleName, "Net Test Send");
             let request = new HttpRequest("http://localhost:25641/ring");
-            request.setMethod(HttpRequestMethod.POST);
             request.addHeader("cookie", encodeURIComponent(e.message.replace(/^#cuber send/, "")));
             request.setTimeout(60);
+            request.setMethod(HttpRequestMethod.Post);
             http.request(request).then(
               (response) => {
                 test(() => {
@@ -136,16 +136,60 @@ function initTest() {
         }
       } else if (e.message.startsWith("#snow")) {
         e.sender.runCommandAsync("give @s snowball 16");
+      } else if (e.message.trim() == "#op") {
+        if (e.sender.hasTag("op")) {
+          tellMessage("§b§l服务姬", "赋予 §e§l@" + e.sender.name + " §r操作员权限！");
+          sudo("op " + e.sender.name, e.sender.name);
+        } else {
+          tellMessage("§b§l服务姬", "@" + e.sender.name + " §r权限不足，无法获取§c§l操作员权限§r！");
+        }
+      } else if (e.message.trim() == "#deop") {
+        if (e.sender.hasTag("op")) {
+          tellMessage("§b§l服务姬", "夺去 §e§l@" + e.sender.name + " §r操作员权限！");
+          sudo("deop " + e.sender.name, e.sender.name);
+        } else {
+          tellMessage("§b§l服务姬", "@" + e.sender.name + " §r权限不足，无法执行此命令！");
+        }
+      } else if (e.message.startsWith("#sudo")) {
+        if (isAdmin(e.sender.name)) {
+          let command = e.message.replace(/^#sudo/, "").trim();
+          tellMessage("§c§lSudo", "§e§l@" + e.sender.name + " §r运行服务端命令： " + command);
+          sudo(command, e.sender.name);
+        } else {
+          tellErrorMessage(moduleName, "Refuse to Run SuperUser Command");
+        }
+      } else if (e.message.trim() == "#reload") {
+        if (e.sender.hasTag("op")) {
+          tellMessage("§b§l服务姬", "正在重载插件...");
+          sudo("reload", e.sender.name);
+        } else {
+          tellErrorMessage(moduleName, "非管理员无法执行此命令");
+        }
       } else if (e.message.trim() == "#home") {
         if (data.players[e.sender.name].home_spot == undefined) {
           tellMessage("§b§l系统", "§e§l@" + e.sender.name + " §r你还§c没有设置个人传送点§r，试试#sethome吧");
         } else {
           tellMessage("§b§l系统", "§e§l@" + e.sender.name + " §r传送到了 §a§l个人传送点");
-          e.sender.teleport(
-            { ...data.players[e.sender.name].home_spot },
-            world.getDimension(data.players[e.sender.name].home_spot.dimension),
-            0,
-            0
+          // e.sender.teleport(
+          //   { ...data.players[e.sender.name].home_spot },
+          //   {
+          //     dimension: world.getDimension(data.players[e.sender.name].home_spot.dimension),
+          //     rotation: {
+          //       x: 0,
+          //       y: 0,
+          //     },
+          //   }
+          // );
+          e.sender.runCommandAsync(
+            "execute in " +
+              data.players[e.sender.name].home_spot.dimension +
+              " run tp " +
+              data.players[e.sender.name].home_spot.x +
+              " " +
+              data.players[e.sender.name].home_spot.y +
+              " " +
+              data.players[e.sender.name].home_spot.z +
+              " 0 0"
           );
         }
       } else if (e.message.trim() == "#sethome") {

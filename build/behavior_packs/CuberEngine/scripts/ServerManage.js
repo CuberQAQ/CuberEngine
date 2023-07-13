@@ -4,7 +4,7 @@
 // Based on GameTest Framework (https://learn.microsoft.com/zh-cn/minecraft/creator/scriptapi/)
 // Version: 3.0.0
 // Copyright CuberQAQ. All rights reserved.
-import { Player, world, GameMode, } from "@minecraft/server";
+import { Player, world, system, GameMode } from "@minecraft/server";
 import { data, saveData } from "./Data";
 import { addRunBeforeTp } from "./CuberSnow";
 import { anaylseError, getGamemode, tellMessage } from "./utils";
@@ -25,8 +25,7 @@ async function clearEntity(config) {
         for (let i = 0; i < typesLength; ++i) {
             if (config.list[j].types[i][1]) {
                 try {
-                    total_clear += (await overworld.runCommandAsync("kill @e[type=" + config.list[j].types[i][0] + "]"))
-                        .successCount;
+                    total_clear += (await overworld.runCommandAsync("kill @e[tag=!nclear,type=" + config.list[j].types[i][0] + "]")).successCount;
                 }
                 catch (e) {
                     if (!(typeof e == "string" && e.trim() == "No targets matched selector")) {
@@ -41,7 +40,7 @@ async function clearEntity(config) {
     saveData();
 }
 function initServerManage() {
-    world.events.blockBreak.subscribe((e) => {
+    world.afterEvents.blockBreak.subscribe((e) => {
         if (!e.player.hasTag(data.settings.new_player.limit_tag)) {
             if (e.dimension != overworld ||
                 e.block.x < data.settings.new_player.allow_area.begin_x ||
@@ -54,7 +53,7 @@ function initServerManage() {
             }
         }
     });
-    world.events.blockPlace.subscribe((e) => {
+    world.afterEvents.blockPlace.subscribe((e) => {
         if (!e.player.hasTag(data.settings.new_player.limit_tag)) {
             if (e.dimension != overworld ||
                 e.block.x < data.settings.new_player.allow_area.begin_x ||
@@ -66,7 +65,7 @@ function initServerManage() {
             }
         }
     });
-    world.events.beforeItemUse.subscribe((e) => {
+    world.beforeEvents.itemUse.subscribe((e) => {
         if (e.source instanceof Player) {
             e.source.location.x;
             if (!e.source.hasTag(data.settings.new_player.limit_tag) &&
@@ -75,27 +74,27 @@ function initServerManage() {
                     e.source.location.x > data.settings.new_player.allow_area.end_x ||
                     e.source.location.z < data.settings.new_player.allow_area.begin_z ||
                     e.source.location.z > data.settings.new_player.allow_area.end_z)) {
-                if (e.item.typeId != "minecraft:snowball") {
+                if (e.itemStack.typeId != "minecraft:snowball") {
                     e.cancel = true;
                     e.source.runCommandAsync('tellraw @s {"rawtext":[{"text":"§c不允许在新人建筑区外使用工具 @' + e.source.name + '"}]}');
                 }
             }
         }
     });
-    world.events.beforeExplosion.subscribe((e) => {
+    world.beforeEvents.explosion.subscribe((e) => {
         if (!data.settings.world.allow_explode) {
-            e.source.runCommandAsync('tellraw @a {"rawtext":[{"text":"§c不允许发生爆炸"}]}');
+            e.source?.runCommandAsync('tellraw @a {"rawtext":[{"text":"§c不允许发生爆炸"}]}');
             e.cancel = true;
         }
     });
     // 玩家数据初始化
-    world.events.playerJoin.subscribe((e) => {
-        if (data.players[e.player.name] == undefined) {
-            tellMessage(moduleName, "初始化个人信息 §e@" + e.player.name);
+    world.afterEvents.playerJoin.subscribe((e) => {
+        if (data.players[e.playerName] == undefined) {
+            tellMessage(moduleName, "初始化个人信息 §e@" + e.playerName);
             // e.player.runCommandAsync('scoreboard players add "' + e.player.name + '" time 0');
-            data.players[e.player.name] = {
+            data.players[e.playerName] = {
                 job: data.settings.players.default_job,
-                score_id: e.player.scoreboard.id,
+                score_id: world.getPlayers({ name: e.playerName })[0].scoreboardIdentity?.id,
                 goodat: data.settings.players.default_goodat,
                 money: data.settings.players.default_money,
                 place: data.settings.players.default_place,
@@ -103,15 +102,15 @@ function initServerManage() {
                 last_checkin: 0,
                 checkin_times: 0,
             };
-            e.player.runCommandAsync("give @s snowball 16");
+            world.getPlayers({ name: e.playerName })[0].runCommandAsync("give @s snowball 16");
             saveData();
         }
         else {
-            data.players[e.player.name].last_login = new Date().getTime();
+            data.players[e.playerName].last_login = new Date().getTime();
             saveData();
         }
     });
-    world.events.entityHit.subscribe((e) => {
+    world.afterEvents.entityHitBlock.subscribe((e) => {
         e.hitBlock?.trySetPermutation(e.hitBlock.permutation);
     });
     addRunBeforeTp("serverManage_newPlayer", async (player, list_key) => {
@@ -123,7 +122,7 @@ function initServerManage() {
                     .button1("明白了")
                     .button2("取消传送")
                     .show(player);
-                if (msfr.selection == 1) {
+                if (msfr.selection == 0) {
                     player.runCommandAsync("gamemode spectator");
                     tellMessage("§b§l提示", "§e§l" + player.name + "§r 正在参观地图!");
                     return { cancel: false };
@@ -133,7 +132,7 @@ function initServerManage() {
         }
         return { cancel: false };
     });
-    world.events.beforeChat.subscribe(async (e) => {
+    world.beforeEvents.chatSend.subscribe(async (e) => {
         if (e.message.trim() == "#exit") {
             tellMessage("§b§l雪球菜单", "§e§l" + e.sender.name + "§r 返回了 §a§l新人建筑区");
             // tellMessage(
@@ -174,27 +173,25 @@ function initServerManage() {
     });
     // 实体清除
     var tick = 20;
-    world.events.tick.subscribe((e) => {
-        --tick;
-        if (tick <= 0) {
-            tick = 20;
-            let nowTime = new Date().getTime();
-            data.settings.entity_clear.config.forEach((config) => {
-                // tellMessage(moduleName, "nowTime - config.last_clear = " + (nowTime - config.last_clear));
-                if (!config.enable)
-                    return;
-                if (config.forecast &&
-                    !config.forecasted &&
-                    nowTime - config.last_clear >= (config.time - config.foretime) * 1000) {
-                    tellMessage(data.settings.entity_clear.sender, "还有§c" + config.foretime + "秒§r就要清理§e§l" + config.show ?? config.name + "§r了喵！");
-                    config.forecasted = true;
-                }
-                if (nowTime - config.last_clear >= config.time * 1000) {
-                    clearEntity(config);
-                }
-            });
-        }
-    });
+    system.runInterval(() => {
+        let nowTime = new Date().getTime();
+        if (!data.settings)
+            return;
+        data.settings.entity_clear.config.forEach((config) => {
+            // tellMessage(moduleName, "nowTime - config.last_clear = " + (nowTime - config.last_clear));
+            if (!config.enable)
+                return;
+            if (config.forecast &&
+                !config.forecasted &&
+                nowTime - config.last_clear >= (config.time - config.foretime) * 1000) {
+                tellMessage(data.settings.entity_clear.sender, "还有§c" + config.foretime + "秒§r就要清理§e§l" + config.show ?? config.name + "§r了喵！");
+                config.forecasted = true;
+            }
+            if (nowTime - config.last_clear >= config.time * 1000) {
+                clearEntity(config);
+            }
+        });
+    }, 20);
     return { moduleName, moduleVersion };
 }
 export { initServerManage, clearEntity };
