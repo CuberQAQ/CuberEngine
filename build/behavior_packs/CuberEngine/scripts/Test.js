@@ -1,5 +1,5 @@
 import { world } from "@minecraft/server";
-import { anaylseError, delayBox, isAdmin, tellErrorMessage, tellMessage, tellSuccessMessage, test } from "./utils";
+import { anaylseError, delayBox, isAdmin, permissionStrTest, tellErrorMessage, tellMessage, tellSuccessMessage, test, } from "./utils";
 import { http, HttpRequest, HttpRequestMethod } from "@minecraft/server-net";
 import { backupInfo, data, reloadData, saveData, sudo } from "./Data";
 import { clearEntity } from "./ServerManage";
@@ -210,6 +210,10 @@ function initTest() {
                     data.players[e.sender.name].home_spot = { ...e.sender.location, dimension };
                     tellMessage("§b§l系统", "§e§l@" + e.sender.name + " §r个人传送点 §a§l设置成功");
                     saveData("@" + e.sender.name + " #sethome");
+                }
+                else if (/^#permission/.test(e.message)) {
+                    let target = e.message.replace(/^#permission (\w*) .*/, "$1"), perStr = e.message.replace(/^#permission \w* (.*)/, "$1").trim();
+                    tellMessage(moduleName, "Test [@" + target + "] permission [" + perStr + "], result:" + permissionStrTest(target, perStr));
                 }
             }
             catch (e) {

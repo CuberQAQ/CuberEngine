@@ -6,8 +6,8 @@
 // Copyright CuberQAQ. All rights reserved.
 import { world } from "@minecraft/server";
 import { ActionFormData, MessageFormData, ModalFormData } from "@minecraft/server-ui";
-import { anaylseError, getDate, getPlayerScore, isAdmin, tellErrorMessage, tellMessage } from "./utils";
-import { backup, backupInfo, data, delBackup, reloadBackupInfo, reloadData, restore, saveData, sudo, } from "./Data";
+import { anaylseError, getDate, getPlayerScore, isAdmin, permissionStrTest, tellErrorMessage, tellMessage, } from "./utils";
+import { backup, backupInfo, data, permissionList, delBackup, reloadBackupInfo, reloadPermission, reloadData, restore, savePermission, saveData, sudo, } from "./Data";
 import { clearEntity } from "./ServerManage";
 // import { mkdir } from "fs-extra";
 const overworld = world.getDimension("overworld");
@@ -24,7 +24,7 @@ const snowScripts = {
         sudo("say SUDO Test Success", player.name);
         return true;
     },
-    developingFunction: async function (player, list_key) {
+    empty: async function (player, list_key) {
         let msfrNoTag = await new MessageFormData()
             .title("提示")
             .body("§e§l施工中...\n§r该功能暂未开放，敬请期待！")
@@ -69,19 +69,44 @@ const snowScripts = {
         while (true) {
             // 定义选择选项用的函数(列出所有菜单，让人选)
             async function chooseListFromAll(operation_name) {
-                // 选择列表
-                let afdChooseList = new ActionFormData().title("请选择" + operation_name + "选项所在列表");
                 let keyList = [];
-                for (let item in data.snow) {
-                    if (data.snow[item].lock == undefined || data.snow[item].lock == false) {
-                        keyList.push(item);
-                        afdChooseList = afdChooseList.button(data.snow[item].name);
+                while (true) {
+                    // 选择列表
+                    let afdChooseList = new ActionFormData().title("请选择" + operation_name + "选项所在列表");
+                    for (let item in data.snow) {
+                        if (data.snow[item].lock == undefined || data.snow[item].lock == false) {
+                            keyList.push(item);
+                            afdChooseList = afdChooseList.button(data.snow[item].name);
+                        }
                     }
+                    let afrChooseList = await afdChooseList.show(player);
+                    if (afrChooseList.selection == undefined)
+                        return undefined;
+                    if (!isAdmin(player.name)) {
+                        if (data.snow[keyList[afrChooseList.selection]].edit_permission == undefined ||
+                            data.snow[keyList[afrChooseList.selection]].edit_permission.trim() == "" ||
+                            !permissionStrTest(player.name, data.snow[keyList[afrChooseList.selection]].edit_permission.trim())) {
+                            // 没权限编辑
+                            let msgResponse = await new MessageFormData()
+                                .title("警告")
+                                .body("没有编辑此菜单列表的权限！\n至少需要拥有以下权限之一：\n" +
+                                (data.snow[keyList[afrChooseList.selection]].edit_permission
+                                    ? data.snow[keyList[afrChooseList.selection]].edit_permission.trim()
+                                    : ""))
+                                .button1("确定")
+                                .button2("退出")
+                                .show(player);
+                            if (msgResponse.selection == 0) {
+                                continue;
+                            }
+                            else {
+                                return undefined;
+                            }
+                        }
+                    }
+                    return keyList[afrChooseList.selection];
                 }
-                let afrChooseList = await afdChooseList.show(player);
-                if (afrChooseList.selection == undefined)
-                    return undefined;
-                return keyList[afrChooseList.selection];
+                return undefined;
             }
             // 定义选择选项用的函数(通过进入主界面选择) 【未完成】
             async function chooseListFromTree(operation_name) {
@@ -104,18 +129,41 @@ const snowScripts = {
                 if (!targetListObj || !(targetListObj.list instanceof Array)) {
                     throw new Error("Strange targetListObj in [chooseItem]");
                 }
-                // 选择选项
-                let afdChooseItem = new ActionFormData().title("编辑菜单 -" + targetListObj.name).body("" + operation_name);
-                let length = targetListObj.list.length;
-                for (let i = 0; i < length; ++i) {
-                    afdChooseItem = afdChooseItem.button(targetListObj.list[i].name, (targetListObj.list[i].icon ?? "") != "" ? "textures/blocks/" + targetListObj.list[i].icon : undefined);
+                while (true) {
+                    // 选择选项
+                    let afdChooseItem = new ActionFormData().title("编辑菜单 -" + targetListObj.name).body("" + operation_name);
+                    let length = targetListObj.list.length;
+                    for (let i = 0; i < length; ++i) {
+                        afdChooseItem = afdChooseItem.button(targetListObj.list[i].name, (targetListObj.list[i].icon ?? "") != "" ? "textures/" + targetListObj.list[i].icon : undefined);
+                    }
+                    let afrChooseItem = await afdChooseItem.show(player);
+                    // 若退出
+                    if (afrChooseItem.selection == undefined) {
+                        return undefined;
+                    }
+                    if (!isAdmin(player.name) && targetListObj.list[afrChooseItem.selection].edit_permission != undefined) {
+                        if (targetListObj.list[afrChooseItem.selection].edit_permission.trim() == "" ||
+                            !permissionStrTest(player.name, targetListObj.list[afrChooseItem.selection].edit_permission.trim())) {
+                            // 没权限编辑
+                            let msgResponse = await new MessageFormData()
+                                .title("警告")
+                                .body("没有编辑此菜单选项的权限！\n至少需要拥有以下权限之一：\n" +
+                                (targetListObj.list[afrChooseItem.selection].edit_permission
+                                    ? targetListObj.list[afrChooseItem.selection].edit_permission.trim()
+                                    : ""))
+                                .button1("确定")
+                                .button2("退出")
+                                .show(player);
+                            if (msgResponse.selection == 0) {
+                                continue;
+                            }
+                            else {
+                                return undefined;
+                            }
+                        }
+                    }
+                    return afrChooseItem.selection;
                 }
-                let afrChooseItem = await afdChooseItem.show(player);
-                // 若退出
-                if (afrChooseItem.selection == undefined) {
-                    return undefined;
-                }
-                return afrChooseItem.selection;
             }
             // 定义编辑或者添加菜单用的函数
             async function editItem(operation_name, raw_data) {
@@ -132,7 +180,7 @@ const snowScripts = {
                         type: "null",
                     };
                 while (true) {
-                    let afrItemEditor1 = await new ModalFormData()
+                    let afdItemEditor1 = new ModalFormData()
                         .title("" + operation_name + "选项")
                         .textField("§l显示名称§r\n可用双S符号调色，\\n换行。最多两行，每行最多约16个汉字(32个字母)", "输入显示名称", raw_data?.name)
                         .textField("权限标签(拥有标签才可以执行选项)", '多个标签请用英文逗号","隔开', raw_data?.tag?.length
@@ -163,8 +211,11 @@ const snowScripts = {
                                 return 0;
                         }
                     })())
-                        .textField("图标位置(资源包 textures/blocks/ 下不含后缀的PNG图片名)", "留空为无图标", raw_data.icon)
-                        .show(player);
+                        .textField("图标位置(资源包 textures 文件夹下不含后缀的PNG图片路径)\n例如：blocks/command_block 为命令方块纹理", "留空为无图标", raw_data.icon);
+                    if (isAdmin(player.name)) {
+                        afdItemEditor1 = afdItemEditor1.textField("使用权限\n§7§o若指定多个权限，用英文逗号分隔，拥有其一即可使用", "留空为所有人可执行", raw_data.use_permission);
+                    }
+                    let afrItemEditor1 = await afdItemEditor1.show(player);
                     if (afrItemEditor1.formValues == undefined) {
                         return undefined;
                     }
@@ -208,7 +259,14 @@ const snowScripts = {
                     }
                     // icon
                     if (afrItemEditor1.formValues[3].toString().trim() != "") {
-                        resultItem.icon = afrItemEditor1.formValues[3].toString().trim();
+                        resultItem.icon = afrItemEditor1.formValues[3]
+                            .toString()
+                            .trim()
+                            .replace(/^[\\/]/, "");
+                    }
+                    // use permission
+                    if (afrItemEditor1.formValues[4] && afrItemEditor1.formValues[4].toString().trim() != "") {
+                        resultItem.use_permission = afrItemEditor1.formValues[4].toString().trim();
                     }
                     break;
                 }
@@ -689,19 +747,44 @@ const snowScripts = {
     admin_snow_editList: async function (player, list_key) {
         // 定义选择选项用的函数(列出所有菜单，让人选)
         async function chooseListFromAll(operation_name) {
-            // 选择列表
-            let afdChooseList = new ActionFormData().title("" + operation_name + "列表");
             let keyList = [];
-            for (let item in data.snow) {
-                if (data.snow[item].lock == undefined || data.snow[item].lock == false) {
-                    keyList.push(item);
-                    afdChooseList = afdChooseList.button(data.snow[item].name);
+            while (true) {
+                // 选择列表
+                let afdChooseList = new ActionFormData().title("" + operation_name + "列表");
+                for (let item in data.snow) {
+                    if (data.snow[item].lock == undefined || data.snow[item].lock == false) {
+                        keyList.push(item);
+                        afdChooseList = afdChooseList.button(data.snow[item].name);
+                    }
                 }
+                let afrChooseList = await afdChooseList.show(player);
+                if (afrChooseList.selection == undefined)
+                    return undefined;
+                if (!isAdmin(player.name)) {
+                    if (data.snow[keyList[afrChooseList.selection]].edit_permission == undefined ||
+                        data.snow[keyList[afrChooseList.selection]].edit_permission.trim() == "" ||
+                        !permissionStrTest(player.name, data.snow[keyList[afrChooseList.selection]].edit_permission.trim())) {
+                        // 没权限编辑
+                        let msgResponse = await new MessageFormData()
+                            .title("警告")
+                            .body("没有编辑此菜单列表的权限！\n至少需要拥有以下权限之一：\n" +
+                            (data.snow[keyList[afrChooseList.selection]].edit_permission
+                                ? data.snow[keyList[afrChooseList.selection]].edit_permission.trim()
+                                : ""))
+                            .button1("确定")
+                            .button2("退出")
+                            .show(player);
+                        if (msgResponse.selection == 0) {
+                            continue;
+                        }
+                        else {
+                            return undefined;
+                        }
+                    }
+                }
+                return keyList[afrChooseList.selection];
             }
-            let afrChooseList = await afdChooseList.show(player);
-            if (afrChooseList.selection == undefined)
-                return undefined;
-            return keyList[afrChooseList.selection];
+            return undefined;
         }
         // 定义选择菜单的函数
         async function chooseList(operation_name) {
@@ -731,7 +814,7 @@ const snowScripts = {
                             let afrItemEditor2 = await new ModalFormData()
                                 .title("" + operation_name + "选项")
                                 .textField("输入目标菜单键名", "输入键名")
-                                .toggle("允许修改上锁菜单", false)
+                                .toggle("允许修改上锁菜单(仅管理员)", false)
                                 .show(player);
                             if (afrItemEditor2.formValues == undefined) {
                                 return undefined;
@@ -761,8 +844,31 @@ const snowScripts = {
                                 }
                                 continue;
                             }
+                            // 检查是否有权限
+                            if (!isAdmin(player.name)) {
+                                if (data.snow[String(afrItemEditor2.formValues[0])].edit_permission == undefined ||
+                                    data.snow[String(afrItemEditor2.formValues[0])].edit_permission.trim() == "" ||
+                                    !permissionStrTest(player.name, data.snow[String(afrItemEditor2.formValues[0])].edit_permission.trim())) {
+                                    // 没权限编辑
+                                    let msgResponse = await new MessageFormData()
+                                        .title("警告")
+                                        .body("没有编辑此菜单列表的权限！\n至少需要拥有以下权限之一：\n" +
+                                        (data.snow[String(afrItemEditor2.formValues[0])].edit_permission
+                                            ? data.snow[String(afrItemEditor2.formValues[0])].edit_permission.trim()
+                                            : ""))
+                                        .button1("确定")
+                                        .button2("退出")
+                                        .show(player);
+                                    if (msgResponse.selection == 0) {
+                                        continue;
+                                    }
+                                    else {
+                                        return undefined;
+                                    }
+                                }
+                            }
                             // 检查是否上锁
-                            if (data.snow[Number(afrItemEditor2.formValues[0])].lock == true) {
+                            if (data.snow[String(afrItemEditor2.formValues[0])].lock == true) {
                                 if (afrItemEditor2.formValues[1] == undefined || afrItemEditor2.formValues[1] == false) {
                                     let msfr = await new MessageFormData()
                                         .title("错误")
@@ -831,15 +937,20 @@ const snowScripts = {
                 };
             }
             while (true) {
-                let afrListEditor1 = await new ModalFormData()
+                let afdListEditor1 = new ModalFormData()
                     .title("" + operation_name + "列表")
                     .textField("§l列表键名§r\n不会被显示出来，为该菜单的唯一身份标识，不可重复\n同时作为JSON中该列表的键名", "输入列表键名", raw_data.key)
                     .textField("§l列表名称(可选)§r\n不会被显示出来，自助编辑菜单时方便标记\n可用双S符号调色，\\n换行。最多两行，每行最多约16个汉字(32个字母)", "输入显示名称, 不填默认为键名", raw_data.snow_list.name)
                     .textField("§l列表标题§r\n进入列表时的窗口标题\n可用双S符号调色", "输入显示名称", raw_data.snow_list.title)
                     .textField("§l提示文字(可选)§r\n显示在窗口内部上方的一段文字\n可用双S符号调色，\\n换行，具体字符不限", "输入提示文字", raw_data.snow_list.body)
                     .toggle("显示返回上一级菜单按钮", raw_data.snow_list.show_back)
-                    .toggle("锁定菜单(仅管理员)", raw_data.snow_list.lock ?? false)
-                    .show(player);
+                    .toggle("锁定菜单(仅管理员)", raw_data.snow_list.lock ?? false);
+                if (isAdmin(player.name)) {
+                    afdListEditor1 = afdListEditor1
+                        .textField("进入权限\n§7§o若指定多个权限，用英文逗号分隔，拥有其一即可进入此菜单列表", "留空为所有人可进入", raw_data.snow_list.entry_permission)
+                        .textField("编辑权限\n§7§o若指定多个权限，用英文逗号分隔，拥有其一即可编辑此菜单列表", "留空为所有人不可编辑", raw_data.snow_list.edit_permission);
+                }
+                let afrListEditor1 = await afdListEditor1.show(player);
                 if (afrListEditor1.formValues == undefined) {
                     return undefined;
                 }
@@ -878,6 +989,27 @@ const snowScripts = {
                         }
                         continue;
                     }
+                }
+                // 若上锁 查询是否为管理员
+                if (afrListEditor1.formValues[5] && !isAdmin(player.nameTag)) {
+                    let msfr = await new MessageFormData()
+                        .title("错误")
+                        .body("非管理员无法创建锁定列表")
+                        .button1("确定")
+                        .button2("退出")
+                        .show(player);
+                    if (msfr.selection == 1) {
+                        return undefined;
+                    }
+                    continue;
+                }
+                // 进入权限
+                if (afrListEditor1.formValues[6] && afrListEditor1.formValues[6].toString().trim() != "") {
+                    resultList.entry_permission = afrListEditor1.formValues[6].toString().trim();
+                }
+                // 编辑权限
+                if (afrListEditor1.formValues[7] && afrListEditor1.formValues[7].toString().trim() != "") {
+                    resultList.edit_permission = afrListEditor1.formValues[7].toString().trim();
                 }
                 // 若上锁 查询是否为管理员
                 if (afrListEditor1.formValues[5] && !isAdmin(player.nameTag)) {
@@ -937,6 +1069,18 @@ const snowScripts = {
         switch (afrChooseOperation.selection) {
             case 0: // 添加列表
                 {
+                    if (!isAdmin(player.nameTag)) {
+                        let msfr = await new MessageFormData()
+                            .title("错误")
+                            .body("非管理员无法添加列表")
+                            .button1("确定")
+                            .button2("退出")
+                            .show(player);
+                        if (msfr.selection == 1) {
+                            return false;
+                        }
+                        return false;
+                    }
                     let resultListData = await editList("添加", true);
                     if (resultListData == undefined)
                         return false;
@@ -1714,6 +1858,244 @@ const snowScripts = {
             return false;
         }
     },
+    admin_permission: async function (player, list_key) {
+        while (true) {
+            if (!permissionList) {
+                tellErrorMessage(moduleName, "Permission List Undefined! §e@" + player.name);
+                return true;
+            }
+            let afr = new ActionFormData().title("权限系统").body("请选择要编辑的权限组，或新建权限组");
+            let listLength = 0;
+            let keyList = [];
+            for (let key in permissionList) {
+                ++listLength;
+                keyList.push(key);
+                afr = afr.button(key);
+            }
+            afr = afr.button("§8§o§l新建权限组");
+            let afrResponse = await afr.show(player);
+            // 若退出
+            if (afrResponse.canceled == undefined || afrResponse.selection == undefined) {
+                return false;
+            }
+            if (afrResponse.selection <= listLength - 1) {
+                // 选择已有权限组
+                while (true) {
+                    let afr2 = new ActionFormData()
+                        .title("编辑权限组:" + keyList[afrResponse.selection])
+                        .body("请选择要移除的成员，或“添加成员”");
+                    if (permissionList == undefined || permissionList[keyList[afrResponse.selection]] == undefined)
+                        return false;
+                    let memberCount = permissionList[keyList[afrResponse.selection]].length;
+                    for (let i = 0; i < memberCount; ++i) {
+                        afr2 = afr2.button(permissionList[keyList[afrResponse.selection]][i]);
+                    }
+                    afr2 = afr2.button("§8§o§l添加成员");
+                    afr2 = afr2.button("§c§o§l删除此权限组");
+                    let afr2Response = await afr2.show(player);
+                    // 若退出
+                    if (afr2Response.canceled == undefined || afr2Response.selection == undefined) {
+                        break;
+                    }
+                    if (afr2Response.selection <= memberCount - 1) {
+                        // 移除成员
+                        let msgResponse = await new MessageFormData()
+                            .title("警告")
+                            .body("确定将成员 §e" +
+                            permissionList[keyList[afrResponse.selection]][afr2Response.selection] +
+                            " §r\n从权限组 §e§l" +
+                            keyList[afrResponse.selection] +
+                            " §r 中移除？")
+                            .button1("确定移除")
+                            .button2("还是算了")
+                            .show(player);
+                        if (msgResponse.selection == 0) {
+                            permissionList[keyList[afrResponse.selection]].splice(afr2Response.selection, 1);
+                            savePermission(player.name);
+                            reloadPermission();
+                        }
+                        else {
+                            continue;
+                        }
+                    }
+                    else if (afr2Response.selection == memberCount) {
+                        // 添加成员
+                        // 选择目标玩家
+                        let targetPlayer = "";
+                        {
+                            let afrPlayerChoose1 = await new ActionFormData()
+                                .title("玩家信息列表")
+                                .body("如何选择目标玩家")
+                                .button("在线玩家列表")
+                                .button("输入玩家ID")
+                                .show(player);
+                            if (afrPlayerChoose1.selection == undefined)
+                                continue;
+                            // 在线玩家数组
+                            let playerList = [];
+                            for (let item of world.getPlayers()) {
+                                playerList.push(item);
+                                // tellMessage(moduleName, "Push Player: " + item.name);
+                            }
+                            if (afrPlayerChoose1.selection == 0) {
+                                // 在线玩家列表
+                                let afdPlayerChoose2 = new ActionFormData().title("玩家信息列表").body("选择一个在线玩家以查看信息");
+                                for (let i = 0; i < playerList.length; ++i) {
+                                    afdPlayerChoose2 = afdPlayerChoose2.button(playerList[i].name);
+                                }
+                                let afrPlayerChoose2 = await afdPlayerChoose2.show(player);
+                                if (afrPlayerChoose2.selection == undefined)
+                                    continue;
+                                targetPlayer = playerList[afrPlayerChoose2.selection].name;
+                            }
+                            else if (afrPlayerChoose1.selection == 1) {
+                                // 输入玩家ID
+                                while (true) {
+                                    let mfrPlayerChoose = await new ModalFormData()
+                                        .title("玩家信息列表")
+                                        .textField("玩家ID", "输入玩家ID")
+                                        .show(player);
+                                    if (mfrPlayerChoose.formValues == undefined)
+                                        break;
+                                    if (mfrPlayerChoose.formValues[0].toString().trim() == "") {
+                                        let msfr = await new MessageFormData()
+                                            .title("错误")
+                                            .body("玩家ID不可为空")
+                                            .button1("确定")
+                                            .button2("退出")
+                                            .show(player);
+                                        if (msfr.selection == 1) {
+                                            break;
+                                        }
+                                        continue;
+                                    }
+                                    if (!data.players[mfrPlayerChoose.formValues[0].toString().trim()]) {
+                                        let msfr = await new MessageFormData()
+                                            .title("提示")
+                                            .body("玩家ID:" + mfrPlayerChoose.formValues[0].toString().trim() + "\n该玩家信息不存在")
+                                            .button1("确定")
+                                            .button2("退出")
+                                            .show(player);
+                                        if (msfr.selection == 1) {
+                                            break;
+                                        }
+                                        continue;
+                                    }
+                                    targetPlayer = mfrPlayerChoose.formValues[0].toString().trim();
+                                    break;
+                                } // while
+                            } // else if
+                        }
+                        if (targetPlayer == "")
+                            continue;
+                        // 检查是否存在
+                        if (permissionList[keyList[afrResponse.selection]].find((item) => item == targetPlayer)) {
+                            let msgResponse = await new MessageFormData()
+                                .title("错误")
+                                .body("成员 §e" +
+                                targetPlayer +
+                                " §r\n已经是权限组 §e§l" +
+                                keyList[afrResponse.selection] +
+                                " §r 的成员了！")
+                                .button1("确定")
+                                .button2("退出")
+                                .show(player);
+                            if (msgResponse.selection == 0) {
+                                continue;
+                            }
+                            else {
+                                return false;
+                            }
+                        }
+                        // 确认新增成员
+                        let msgResponse = await new MessageFormData()
+                            .title("警告")
+                            .body("确定将成员 §e" + targetPlayer + " §r\n添加至权限组 §e§l" + keyList[afrResponse.selection] + " §r ？")
+                            .button1("确定添加")
+                            .button2("还是算了")
+                            .show(player);
+                        if (msgResponse.selection == 0) {
+                            permissionList[keyList[afrResponse.selection]].push(targetPlayer);
+                            savePermission(player.name);
+                            reloadPermission();
+                        }
+                        continue;
+                    }
+                    else if (afr2Response.selection == memberCount + 1) {
+                        let msgResponse = await new MessageFormData()
+                            .title("警告")
+                            .body("确定删除此权限组：§e" + keyList[afrResponse.selection] + " §r？")
+                            .button1("还是算了")
+                            .button2("§c确定删除")
+                            .show(player);
+                        if (msgResponse.selection == 1) {
+                            delete permissionList[keyList[afrResponse.selection]];
+                            savePermission(player.name);
+                            reloadPermission();
+                        }
+                        continue;
+                    }
+                    else {
+                        tellErrorMessage(moduleName, "Unknown afr2Response.selection in admin_permission @" + player.name);
+                    }
+                    break;
+                }
+            }
+            else if (afrResponse.selection == listLength) {
+                // 选择新建权限组
+                while (true) {
+                    let mdr = await new ModalFormData()
+                        .title("新建权限组")
+                        .textField("权限组名称", "在此输入新权限组名称")
+                        .show(player);
+                    if (mdr.formValues == undefined)
+                        break;
+                    let newGroupName = mdr.formValues[0].toString().trim();
+                    if (newGroupName == "") {
+                        let msfr = await new MessageFormData()
+                            .title("错误")
+                            .body("权限组名称不可为空")
+                            .button1("确定")
+                            .button2("退出")
+                            .show(player);
+                        if (msfr.selection == 1) {
+                            break;
+                        }
+                        continue;
+                    }
+                    if (keyList.find((item) => item == newGroupName)) {
+                        let msfr = await new MessageFormData()
+                            .title("错误")
+                            .body("同名权限组已存在：§e" + newGroupName)
+                            .button1("确定")
+                            .button2("退出")
+                            .show(player);
+                        if (msfr.selection == 1) {
+                            break;
+                        }
+                        continue;
+                    }
+                    let msgResponse = await new MessageFormData()
+                        .title("警告")
+                        .body("确定新建权限组：§e" + newGroupName + " §r？")
+                        .button1("还是算了")
+                        .button2("§a确定新建")
+                        .show(player);
+                    if (msgResponse.selection == 1) {
+                        permissionList[newGroupName] = [];
+                        savePermission(player.name);
+                        reloadPermission();
+                    }
+                    break;
+                }
+            }
+            else {
+                tellErrorMessage(moduleName, "Unknown afrResponse.selection in admin_permission @" + player.name);
+            }
+            continue;
+        }
+        return false;
+    },
     getLightBlock: async function (player, list_key) {
         let mfr = await new ModalFormData()
             .title("获取光明方块")
@@ -2160,9 +2542,9 @@ const strScripts = {
             (bCheckin ? "今日已签到" : "今日未签到"));
     },
     getSweeperBody: async function (player, list_key) {
-        return ("§a§l欢迎使用扫地姬！§r\n我们的职责是§e§l清理服务器的多余喵~！§r\n扫地姬§b§l累计清理实体数§r: §l§r喵~" +
+        return ("§a§l欢迎使用扫地姬！§r\n我们的职责是§e§l清理服务器的多余喵~！§r\n扫地姬§b§l累计清理实体数§r: §l§r" +
             data.settings.entity_clear.total_clear +
-            "§r\n请选择一个选项喵~：");
+            "§r喵~\n请选择一个选项喵~：");
     },
     getBackupBody: async function (player, list_key) {
         let date = new Date(backupInfo.last_backup_utc);
@@ -2252,6 +2634,27 @@ async function showSnowList(player, list_key) {
         throw new Error("Snow List [" + list_key + "] not Exist");
     }
     let timer = 0;
+    // 判断是否有进入权限
+    // 判断权限组权限
+    if (!isAdmin(player.name) &&
+        data.snow[list_key].entry_permission != undefined &&
+        data.snow[list_key].entry_permission.trim() != "") {
+        if (!permissionStrTest(player.name, data.snow[list_key].entry_permission.trim())) {
+            // 没权限
+            let msfrNoTag = await new MessageFormData()
+                .title("提示")
+                .body("暂未获得使用该选项的权限\n至少应有以下权限之一：\n" +
+                data.snow[list_key].entry_permission.trim() +
+                "\n如有疑问请联系管理员")
+                .button1("确定")
+                .button2("退出菜单")
+                .show(player);
+            if (msfrNoTag.selection == 1) {
+                return true; // 退出菜单
+            }
+            return false; // 确定
+        }
+    }
     while (true) {
         // 显示菜单
         let actionFormData = new ActionFormData(); //.title(data.snow[list_key].title);
@@ -2270,9 +2673,7 @@ async function showSnowList(player, list_key) {
         }
         else {
             for (let i = 0; i < length; ++i) {
-                actionFormData = actionFormData.button(await analyseSnowString(data.snow[list_key].list[i].name, player, list_key, i), (data.snow[list_key].list[i].icon ?? "") != ""
-                    ? "textures/blocks/" + data.snow[list_key].list[i].icon
-                    : undefined);
+                actionFormData = actionFormData.button(await analyseSnowString(data.snow[list_key].list[i].name, player, list_key, i), (data.snow[list_key].list[i].icon ?? "") != "" ? "textures/" + data.snow[list_key].list[i].icon : undefined);
             }
         }
         actionFormData = actionFormData.title(data.snow[list_key].title);
@@ -2286,7 +2687,7 @@ async function showSnowList(player, list_key) {
             return false; // 返回上一级菜单
         if (length > 0) {
             let index = data.snow[list_key].show_back ? actionFormResponse.selection - 1 : actionFormResponse.selection;
-            // 判断权限
+            // 判断标签权限
             if (data.snow[list_key].list[index].tag != undefined && data.snow[list_key].list[index].tag.length > 0) {
                 if (
                 // 若玩家有其中的所有tag 就会返回undefined
@@ -2303,7 +2704,27 @@ async function showSnowList(player, list_key) {
                     if (msfrNoTag.selection == 1) {
                         return true; // 退出菜单
                     }
-                    break; // 确定
+                    continue; // 确定
+                }
+            }
+            // 判断权限组权限
+            if (!isAdmin(player.name) &&
+                data.snow[list_key].list[index].use_permission != undefined &&
+                data.snow[list_key].list[index].use_permission.trim() != "") {
+                if (!permissionStrTest(player.name, data.snow[list_key].list[index].use_permission.trim())) {
+                    // 没权限
+                    let msfrNoTag = await new MessageFormData()
+                        .title("提示")
+                        .body("暂未获得使用该选项的权限\n至少应有以下权限之一：\n" +
+                        data.snow[list_key].list[index].use_permission.trim() +
+                        "\n如有疑问请联系管理员")
+                        .button1("确定")
+                        .button2("退出菜单")
+                        .show(player);
+                    if (msfrNoTag.selection == 1) {
+                        return true; // 退出菜单
+                    }
+                    continue; // 确定
                 }
             }
             switch (data.snow[list_key].list[index].type) {

@@ -122,21 +122,39 @@ function delayBox(func, delay_tick = 0) {
         });
     }
 }
-function permissionTest(player_name, permission_key) {
+function singlePermissionTest(player_name, permission_key) {
+    // tellMessage("Permission", "Permission Test:[" + permission_key + "]");
     if (!permissionList) {
         tellErrorMessage("Permission", "Permission list Undefined!");
         return false;
     }
     if (!permissionList[permission_key]) {
-        tellErrorMessage("Permission", "Unknown Permission Key: " + permission_key);
+        // tellErrorMessage("Permission", "Unknown Permission Key: " + permission_key);
         return false;
     }
-    if (permissionList[permission_key].find((value) => value == player_name)) {
-        return true;
+    let length = permissionList[permission_key].length;
+    for (let i = 0; i < length; ++i) {
+        if (permissionList[permission_key][i] == player_name) {
+            // tellSuccessMessage("Permission", "Have This Permission");
+            return true;
+        }
     }
-    else {
-        return false;
+    // tellErrorMessage("Permission", "No This Permission");
+    return false;
+}
+function permissionStrTest(player_name, permission_str) {
+    // tellMessage("Permission", "Permission JSON:" + JSON.stringify(permissionList));
+    // tellMessage("Permission", "@" + player_name + "PermissionStr Test:" + permission_str);
+    let permissionKeyList = permission_str.split(",");
+    let length = permissionKeyList.length;
+    for (let i = 0; i < length; ++i) {
+        if (singlePermissionTest(player_name, permissionKeyList[i].trim())) {
+            // tellSuccessMessage("Permission", "OK");
+            return true;
+        }
     }
+    // tellErrorMessage("Permission", "Fail");
+    return false;
 }
 function getPlayerScore(objective, target) {
     if (!target || !objective)
@@ -227,6 +245,6 @@ function getDate(utc) {
 const setTimeout = function (func, ticktime = 0) {
     system.runTimeout(func(), ticktime);
 };
-export { tellErrorMessage, tellSuccessMessage, tellMessage, isAdmin, anaylseError, test, getPlayerScore, getDate, getGamemode, setTimeout, delayBox, };
+export { tellErrorMessage, tellSuccessMessage, tellMessage, isAdmin, anaylseError, test, getPlayerScore, getDate, getGamemode, setTimeout, delayBox, permissionStrTest, };
 
 //# sourceMappingURL=../../_CuberEngineDebug/utils.js.map

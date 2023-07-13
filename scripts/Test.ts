@@ -1,6 +1,15 @@
 import { Player, world, system } from "@minecraft/server";
 import { ActionFormData, MessageFormData } from "@minecraft/server-ui";
-import { anaylseError, delayBox, isAdmin, tellErrorMessage, tellMessage, tellSuccessMessage, test } from "./utils";
+import {
+  anaylseError,
+  delayBox,
+  isAdmin,
+  permissionStrTest,
+  tellErrorMessage,
+  tellMessage,
+  tellSuccessMessage,
+  test,
+} from "./utils";
 import { http, HttpClient, HttpRequest, HttpResponse, HttpHeader, HttpRequestMethod } from "@minecraft/server-net";
 import * as fs from "graceful-fs";
 import { SecretString, secrets } from "@minecraft/server-admin";
@@ -211,6 +220,13 @@ function initTest() {
           data.players[e.sender.name].home_spot = { ...e.sender.location, dimension };
           tellMessage("§b§l系统", "§e§l@" + e.sender.name + " §r个人传送点 §a§l设置成功");
           saveData("@" + e.sender.name + " #sethome");
+        } else if (/^#permission/.test(e.message)) {
+          let target = e.message.replace(/^#permission (\w*) .*/, "$1"),
+            perStr = e.message.replace(/^#permission \w* (.*)/, "$1").trim();
+          tellMessage(
+            moduleName,
+            "Test [@" + target + "] permission [" + perStr + "], result:" + permissionStrTest(target, perStr)
+          );
         }
       } catch (e) {
         anaylseError(moduleName, e, "In beforeChat subscribe");
