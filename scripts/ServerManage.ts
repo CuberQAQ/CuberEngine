@@ -5,10 +5,10 @@
 // Version: 3.0.0
 
 // Copyright CuberQAQ. All rights reserved.
-import { Player, world, system, GameMode } from "@minecraft/server";
-import { data, saveData } from "./Data";
+import { Player, world, system, GameMode, WatchdogTerminateReason } from "@minecraft/server";
+import { data, saveData, sudo } from "./Data";
 import { addRunBeforeTp } from "./CuberSnow";
-import { anaylseError, delayBox, getGamemode, setTimeout, tellMessage } from "./utils";
+import { anaylseError, delayBox, getGamemode, setTimeout, tellErrorMessage, tellMessage } from "./utils";
 import { MessageFormData } from "@minecraft/server-ui";
 const moduleName = "ServerManage";
 const moduleVersion = "0.1.0";
@@ -120,6 +120,15 @@ function initServerManage() {
     if (!data.settings.world.allow_explode) {
       e.source?.runCommandAsync('tellraw @a {"rawtext":[{"text":"§c不允许发生爆炸"}]}');
       e.cancel = true;
+    }
+  });
+  system.beforeEvents.watchdogTerminate.subscribe((ev) => {
+    if (ev.terminateReason == WatchdogTerminateReason.Hang) {
+      ev.cancel = true;
+      const players = Array.from(world.getPlayers());
+      tellErrorMessage("CuberEngine", "CuberEngine脚本已被终止运行！正在尝试重启...");
+      console.error("CuberEngine脚本已被终止运行！正在尝试重启...");
+      sudo("reload", "CuberEngine自动重启");
     }
   });
   // 玩家数据初始化

@@ -107,7 +107,7 @@ function tellMessage(sender: string, message: string) {
 function isAdmin(nameTag: string) {
   return adminList.find((item) => item == nameTag) ? true : false;
 }
-function test(func: () => any, module_name?: string, append?: string) {
+function test(func: Function, module_name?: string, append?: string) {
   try {
     func();
   } catch (e) {
