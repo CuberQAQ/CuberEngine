@@ -1507,6 +1507,8 @@ const snowScripts: SnowScriptList = {
       ? data.players[targetPlayer].place ?? data.settings.players.default_place
       : data.settings.players.default_place;
     let online_time = getPlayerScore(world.scoreboard.getObjective("time"), targetPlayer) ?? "null";
+    let total_break = getPlayerScore(world.scoreboard.getObjective("total_break"), targetPlayer) ?? "null";
+    let total_place = getPlayerScore(world.scoreboard.getObjective("total_place"), targetPlayer) ?? "null";
     let money = data.players[targetPlayer]
       ? data.players[targetPlayer].money ?? data.settings.players.default_money
       : data.settings.players.default_money;
@@ -1571,6 +1573,10 @@ const snowScripts: SnowScriptList = {
           "\n§r§l在线总时长:         §r§e" +
           online_time +
           " 分钟" +
+          "\n§r§l总破坏方块数:       §r§e" +
+          total_break +
+          "\n§r§l总放置方块数:       §r§e" +
+          total_place +
           "\n§r§l金币:               §r§e" +
           money +
           "\n§r§l签到总天数:         §r§e" +
@@ -2709,6 +2715,8 @@ const strScripts: StrScriptList = {
       ? data.players[player.name].place ?? data.settings.players.default_place
       : data.settings.players.default_place;
     let online_time = getPlayerScore(world.scoreboard.getObjective("time"), player) ?? "null";
+    let total_break = getPlayerScore(world.scoreboard.getObjective("total_break"), player) ?? "null";
+    let total_place = getPlayerScore(world.scoreboard.getObjective("total_place"), player) ?? "null";
     let money = data.players[player.name]
       ? data.players[player.name].money ?? data.settings.players.default_money
       : data.settings.players.default_money;
@@ -2734,6 +2742,10 @@ const strScripts: StrScriptList = {
       "\n§r§l在线总时长:         §r§e" +
       online_time +
       " 分钟" +
+      "\n§r§l总破坏方块数:       §r§e" +
+      total_break +
+      "\n§r§l总放置方块数:       §r§e" +
+      total_place +
       "\n§r§l金币:               §r§e" +
       money +
       "\n§r§l签到总天数:         §r§e" +

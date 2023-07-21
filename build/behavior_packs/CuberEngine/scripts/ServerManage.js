@@ -41,6 +41,11 @@ async function clearEntity(config) {
 }
 function initServerManage() {
     world.afterEvents.blockBreak.subscribe((e) => {
+        if (e.player.scoreboardIdentity) {
+            world.scoreboard
+                .getObjective("total_break")
+                .setScore(e.player.scoreboardIdentity, (world.scoreboard.getObjective("total_break").getScore(e.player.scoreboardIdentity) ?? 0) + 1);
+        }
         if (!e.player.hasTag(data.settings.new_player.limit_tag)) {
             if (e.dimension != overworld ||
                 e.block.x < data.settings.new_player.allow_area.begin_x ||
@@ -54,6 +59,11 @@ function initServerManage() {
         }
     });
     world.afterEvents.blockPlace.subscribe((e) => {
+        if (e.player.scoreboardIdentity) {
+            world.scoreboard
+                .getObjective("total_place")
+                .setScore(e.player.scoreboardIdentity, (world.scoreboard.getObjective("total_place").getScore(e.player.scoreboardIdentity) ?? 0) + 1);
+        }
         if (!e.player.hasTag(data.settings.new_player.limit_tag)) {
             if (e.dimension != overworld ||
                 e.block.x < data.settings.new_player.allow_area.begin_x ||
