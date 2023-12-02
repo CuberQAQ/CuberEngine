@@ -63,7 +63,7 @@ async function clearEntity(config: EntityClearConfigType) {
   saveData();
 }
 function initServerManage() {
-  world.afterEvents.blockBreak.subscribe((e) => {
+  world.afterEvents.playerBreakBlock.subscribe((e) => {
     if (!e.player.hasTag(data.settings.new_player.limit_tag)) {
       if (
         e.dimension != overworld ||
@@ -80,7 +80,7 @@ function initServerManage() {
       }
     }
   });
-  world.afterEvents.blockPlace.subscribe((e) => {
+  world.afterEvents.playerPlaceBlock.subscribe((e) => {
     if (!e.player.hasTag(data.settings.new_player.limit_tag)) {
       if (
         e.dimension != overworld ||
