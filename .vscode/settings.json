@@ -23,5 +23,6 @@
     "**/.git": true
   },
   "cSpell.words": ["gametest", "gametests", "minecart", "shulker", "zoglin"],
-  "editor.tabSize": 2
+  "editor.tabSize": 2,
+  "gitdoc.enabled": false
 }
