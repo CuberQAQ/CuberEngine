@@ -2714,7 +2714,10 @@ const strScripts: StrScriptList = {
     let place = data.players[player.name]
       ? data.players[player.name].place ?? data.settings.players.default_place
       : data.settings.players.default_place;
-    let online_time = getPlayerScore(world.scoreboard.getObjective("time"), player) ?? "null";
+    let total_break = getPlayerScore(world.scoreboard.getObjective("total_break")!, player) ?? "null";
+    let total_place = getPlayerScore(world.scoreboard.getObjective("total_place")!, player) ?? "null";
+
+    let online_time = getPlayerScore(world.scoreboard.getObjective("time")!, player) ?? "null";
     let money = data.players[player.name]
       ? data.players[player.name].money ?? data.settings.players.default_money
       : data.settings.players.default_money;
