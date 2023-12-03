@@ -11,7 +11,7 @@ import { tellMessage } from "./utils";
 const moduleName = "SmallGame";
 const moduleVersion = "0.1.0";
 function initSmallGame() {
-  world.afterEvents.blockBreak.subscribe((e) => {
+  world.afterEvents.playerBreakBlock.subscribe((e) => {
     if (e.player.hasTag("zq_l") || e.player.hasTag("zq_h")) {
       if (e.brokenBlockPermutation.type.id == "minecraft:leaves") {
         e.block.setPermutation(e.brokenBlockPermutation.clone());

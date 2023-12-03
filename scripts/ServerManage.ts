@@ -63,13 +63,13 @@ async function clearEntity(config: EntityClearConfigType) {
   saveData();
 }
 function initServerManage() {
-  world.afterEvents.blockBreak.subscribe((e) => {
+  world.afterEvents.playerBreakBlock.subscribe((e) => {
     if (e.player.scoreboardIdentity) {
       world.scoreboard
-        .getObjective("total_break")
+        .getObjective("total_break")!
         .setScore(
           e.player.scoreboardIdentity,
-          (world.scoreboard.getObjective("total_break").getScore(e.player.scoreboardIdentity) ?? 0) + 1
+          (world.scoreboard.getObjective("total_break")!.getScore(e.player.scoreboardIdentity) ?? 0) + 1
         );
     }
     if (!e.player.hasTag(data.settings.new_player.limit_tag)) {
@@ -88,13 +88,13 @@ function initServerManage() {
       }
     }
   });
-  world.afterEvents.blockPlace.subscribe((e) => {
+  world.afterEvents.playerPlaceBlock.subscribe((e) => {
     if (e.player.scoreboardIdentity) {
       world.scoreboard
-        .getObjective("total_place")
+        .getObjective("total_place")!
         .setScore(
           e.player.scoreboardIdentity,
-          (world.scoreboard.getObjective("total_place").getScore(e.player.scoreboardIdentity) ?? 0) + 1
+          (world.scoreboard.getObjective("total_place")!.getScore(e.player.scoreboardIdentity) ?? 0) + 1
         );
     }
     if (!e.player.hasTag(data.settings.new_player.limit_tag)) {
